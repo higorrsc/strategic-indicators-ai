@@ -1,3 +1,5 @@
+"""Use case for creating and persisting a cost center."""
+
 from src.budgeting.application.dto import (
     CostCenterDTO,
     CreateCostCenterCommand,
@@ -13,9 +15,22 @@ class CreateCostCenterUseCase:
     """Orchestrates creation and persistence of a new Cost Center."""
 
     def __init__(self, repository: CostCenterRepository) -> None:
+        """Initialize use case with repository dependency.
+
+        Args:
+            repository: Cost center repository instance.
+        """
         self._repository = repository
 
     async def execute(self, command: CreateCostCenterCommand) -> CostCenterDTO:
+        """Execute creation of cost center.
+
+        Args:
+            command: Creation input payload.
+
+        Returns:
+            CostCenterDTO: The created cost center data.
+        """
         code = CostCenterCode(command.code)
         cost_center = CostCenter(
             code=code,

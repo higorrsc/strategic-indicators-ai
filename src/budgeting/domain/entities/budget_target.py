@@ -1,3 +1,5 @@
+"""Budget Target entity representing planned amounts per period and category."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -18,6 +20,7 @@ class BudgetTarget:
     id: UUID = field(default_factory=uuid4)
 
     def __post_init__(self) -> None:
+        """Validate budget target attributes and non-negativity."""
         trimmed_category = self.category.strip()
         if not trimmed_category:
             raise InvalidBudgetTargetError("Budget category cannot be empty.")
@@ -28,7 +31,11 @@ class BudgetTarget:
             )
 
     def update_amount(self, new_amount: Money) -> None:
-        """Update the planned budget target amount."""
+        """Update the planned budget target amount.
+
+        Args:
+            new_amount: The new planned monetary target.
+        """
         if new_amount.is_negative():
             raise InvalidBudgetTargetError(
                 f"Negative budget amount not allowed: {new_amount.amount}."

@@ -1,3 +1,5 @@
+"""Cost allocation application use cases package."""
+
 from src.allocation.application.use_cases.approve_measurement import (
     ApproveMeasurementUseCase,
 )

@@ -1,3 +1,5 @@
+"""Fiscal period value object formatted as YYYY-MM."""
+
 from __future__ import annotations
 
 import re
@@ -16,6 +18,7 @@ class Period:
     month: int
 
     def __post_init__(self) -> None:
+        """Validate year and month boundaries."""
         if self.year < 1900 or self.year > 2100:
             raise InvalidPeriodError(
                 f"Year {self.year} is out of realistic range (1900-2100)."
@@ -27,7 +30,14 @@ class Period:
 
     @classmethod
     def from_string(cls, period_str: str) -> Period:
-        """Parse period string in YYYY-MM format."""
+        """Parse period string in YYYY-MM format.
+
+        Args:
+            period_str: Date string in YYYY-MM format.
+
+        Returns:
+            Period: Initialized period instance.
+        """
         match = _PERIOD_REGEX.match(period_str.strip())
         if not match:
             raise InvalidPeriodError(
@@ -37,39 +47,53 @@ class Period:
         return cls(year=int(year_str), month=int(month_str))
 
     def next_period(self) -> Period:
-        """Return the next sequential month period."""
+        """Return the next sequential month period.
+
+        Returns:
+            Period: Following month period.
+        """
         if self.month == 12:
             return Period(year=self.year + 1, month=1)
         return Period(year=self.year, month=self.month + 1)
 
     def previous_period(self) -> Period:
-        """Return the preceding sequential month period."""
+        """Return the preceding sequential month period.
+
+        Returns:
+            Period: Preceding month period.
+        """
         if self.month == 1:
             return Period(year=self.year - 1, month=12)
         return Period(year=self.year, month=self.month - 1)
 
     def __str__(self) -> str:
+        """Return string representation in YYYY-MM format."""
         return f"{self.year:04d}-{self.month:02d}"
 
     def __repr__(self) -> str:
+        """Return developer representation."""
         return f"Period('{self}')"
 
     def __lt__(self, other: object) -> bool:
+        """Compare chronological precedence."""
         if not isinstance(other, Period):
             return NotImplemented
         return (self.year, self.month) < (other.year, other.month)
 
     def __le__(self, other: object) -> bool:
+        """Compare chronological precedence or equality."""
         if not isinstance(other, Period):
             return NotImplemented
         return (self.year, self.month) <= (other.year, other.month)
 
     def __gt__(self, other: object) -> bool:
+        """Compare chronological succession."""
         if not isinstance(other, Period):
             return NotImplemented
         return (self.year, self.month) > (other.year, other.month)
 
     def __ge__(self, other: object) -> bool:
+        """Compare chronological succession or equality."""
         if not isinstance(other, Period):
             return NotImplemented
         return (self.year, self.month) >= (other.year, other.month)

@@ -1,3 +1,5 @@
+"""Budgeting repository interfaces package."""
+
 from src.budgeting.domain.repositories.budget_repository import BudgetRepository
 from src.budgeting.domain.repositories.cost_center_repository import (
     CostCenterRepository,

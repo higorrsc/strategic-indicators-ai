@@ -1,3 +1,5 @@
+"""Contract entity and allocation share definitions."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -31,6 +33,7 @@ class Contract:
     is_active: bool = True
 
     def __post_init__(self) -> None:
+        """Validate contract code, title, and initial allocation percentages."""
         trimmed_code = self.code.strip()
         trimmed_title = self.title.strip()
         if not trimmed_code:
@@ -45,17 +48,26 @@ class Contract:
 
     @staticmethod
     def _validate_allocations_sum(allocations: list[AllocationShare]) -> None:
-        total = sum(
-            (share.percentage.value for share in allocations),
-            Decimal("0.00"),
-        )
+        """Validate that total percentage allocation equals 100.00%.
+
+        Args:
+            allocations: List of allocation shares to validate.
+
+        Raises:
+            InvalidAllocationPercentageError: If total does not equal 100.00%.
+        """
+        total = sum((share.percentage.value for share in allocations), Decimal("0.00"))
         if total != Decimal("100.00"):
             raise InvalidAllocationPercentageError(
                 f"Allocation shares must sum to 100.00%, got {total}%."
             )
 
     def set_default_allocations(self, allocations: list[AllocationShare]) -> None:
-        """Update default allocation template ensuring 100% distribution invariant."""
+        """Update default allocation template ensuring 100% distribution invariant.
+
+        Args:
+            allocations: List of allocation shares.
+        """
         if allocations:
             self._validate_allocations_sum(allocations)
         self.default_allocations = list(allocations)

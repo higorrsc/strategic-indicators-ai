@@ -1,3 +1,5 @@
+"""Data Transfer Objects for cost allocation application layer."""
+
 from dataclasses import dataclass, field
 from decimal import Decimal
 from uuid import UUID
@@ -5,12 +7,16 @@ from uuid import UUID
 
 @dataclass(frozen=True, slots=True)
 class AllocationShareDTO:
+    """DTO representing an allocation percentage share for a cost center."""
+
     cost_center_id: UUID
     percentage: Decimal
 
 
 @dataclass(frozen=True, slots=True)
 class AllocationEntryDTO:
+    """DTO representing a calculated monetary allocation entry."""
+
     id: UUID
     cost_center_id: UUID
     amount: Decimal
@@ -20,6 +26,8 @@ class AllocationEntryDTO:
 
 @dataclass(frozen=True, slots=True)
 class RegisterContractCommand:
+    """Command payload to register a vendor contract."""
+
     code: str
     supplier_id: UUID
     title: str
@@ -28,6 +36,8 @@ class RegisterContractCommand:
 
 @dataclass(frozen=True, slots=True)
 class ContractDTO:
+    """Output DTO representing a contract."""
+
     id: UUID
     code: str
     supplier_id: UUID
@@ -38,6 +48,8 @@ class ContractDTO:
 
 @dataclass(frozen=True, slots=True)
 class SubmitMeasurementCommand:
+    """Command payload to submit a measurement expense."""
+
     contract_id: UUID
     period: str
     description: str
@@ -48,6 +60,8 @@ class SubmitMeasurementCommand:
 
 @dataclass(frozen=True, slots=True)
 class MeasurementDTO:
+    """Output DTO representing a financial measurement and its allocation lines."""
+
     id: UUID
     contract_id: UUID
     period: str
@@ -60,4 +74,6 @@ class MeasurementDTO:
 
 @dataclass(frozen=True, slots=True)
 class ApproveMeasurementCommand:
+    """Command payload to approve a measurement."""
+
     measurement_id: UUID

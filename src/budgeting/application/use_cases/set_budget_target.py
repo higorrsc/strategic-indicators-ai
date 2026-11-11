@@ -1,3 +1,5 @@
+"""Use case for establishing a planned budget line."""
+
 from decimal import Decimal
 
 from src.budgeting.application.dto import (
@@ -21,10 +23,24 @@ class SetBudgetTargetUseCase:
         cost_center_repository: CostCenterRepository,
         budget_repository: BudgetRepository,
     ) -> None:
+        """Initialize use case with repositories.
+
+        Args:
+            cost_center_repository: Repository for cost center lookups.
+            budget_repository: Repository for budget persistence.
+        """
         self._cost_center_repository = cost_center_repository
         self._budget_repository = budget_repository
 
     async def execute(self, command: SetBudgetTargetCommand) -> BudgetTargetDTO:
+        """Execute setting a planned budget target.
+
+        Args:
+            command: Payload with target details.
+
+        Returns:
+            BudgetTargetDTO: The persisted budget target.
+        """
         cost_center = await self._cost_center_repository.get_by_id(
             command.cost_center_id
         )

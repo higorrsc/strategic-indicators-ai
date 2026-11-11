@@ -1,3 +1,5 @@
+"""Repository interface for Measurement persistence."""
+
 from __future__ import annotations
 
 from typing import Protocol
@@ -10,14 +12,54 @@ from src.shared.domain.value_objects import Period
 class MeasurementRepository(Protocol):
     """Repository abstraction for Measurement persistence."""
 
-    async def add(self, measurement: Measurement) -> None: ...
+    async def add(self, measurement: Measurement) -> None:
+        """Persist a new measurement.
 
-    async def get_by_id(self, measurement_id: UUID) -> Measurement | None: ...
+        Args:
+            measurement: Measurement entity to add.
+        """
+        ...
+
+    async def get_by_id(self, measurement_id: UUID) -> Measurement | None:
+        """Find measurement by identifier.
+
+        Args:
+            measurement_id: Measurement UUID.
+
+        Returns:
+            Measurement if found, None otherwise.
+        """
+        ...
 
     async def list_by_period(
         self, period: Period, state: MeasurementState | None = None
-    ) -> list[Measurement]: ...
+    ) -> list[Measurement]:
+        """List measurements matching a fiscal period.
 
-    async def list_by_contract(self, contract_id: UUID) -> list[Measurement]: ...
+        Args:
+            period: Fiscal period.
+            state: Optional state filter.
 
-    async def update(self, measurement: Measurement) -> None: ...
+        Returns:
+            List of measurements.
+        """
+        ...
+
+    async def list_by_contract(self, contract_id: UUID) -> list[Measurement]:
+        """List measurements associated with a contract.
+
+        Args:
+            contract_id: Contract UUID.
+
+        Returns:
+            List of measurements.
+        """
+        ...
+
+    async def update(self, measurement: Measurement) -> None:
+        """Update existing measurement.
+
+        Args:
+            measurement: Modified measurement entity.
+        """
+        ...

@@ -1,3 +1,5 @@
+"""Hierarchical cost center code value object."""
+
 from __future__ import annotations
 
 import re
@@ -15,6 +17,7 @@ class CostCenterCode:
     value: str
 
     def __post_init__(self) -> None:
+        """Validate hierarchical cost center code format."""
         trimmed = self.value.strip()
         if not trimmed:
             raise InvalidCostCenterCodeError("Cost center code cannot be empty.")
@@ -26,6 +29,7 @@ class CostCenterCode:
 
     @property
     def segments(self) -> list[str]:
+        """Return dot-separated code segments."""
         return self.value.split(".")
 
     @property
@@ -42,15 +46,31 @@ class CostCenterCode:
         return CostCenterCode(".".join(parts[:-1]))
 
     def is_ancestor_of(self, other: CostCenterCode) -> bool:
-        """Check if self is an ancestor of other code in hierarchy."""
+        """Check if self is an ancestor of other code in hierarchy.
+
+        Args:
+            other: The candidate descendant code.
+
+        Returns:
+            True if self is an ancestor of other.
+        """
         return other.value.startswith(f"{self.value}.") and other.level > self.level
 
     def is_descendant_of(self, other: CostCenterCode) -> bool:
-        """Check if self is a descendant of other code in hierarchy."""
+        """Check if self is a descendant of other code in hierarchy.
+
+        Args:
+            other: The candidate ancestor code.
+
+        Returns:
+            True if self is a descendant of other.
+        """
         return other.is_ancestor_of(self)
 
     def __str__(self) -> str:
+        """Return string value."""
         return self.value
 
     def __repr__(self) -> str:
+        """Return developer representation."""
         return f"CostCenterCode('{self.value}')"

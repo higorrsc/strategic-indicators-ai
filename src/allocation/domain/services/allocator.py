@@ -1,3 +1,5 @@
+"""Exact penny cost allocation domain service."""
+
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
@@ -21,7 +23,15 @@ class ExactPennyAllocator:
     def allocate(
         gross_amount: Money, shares: list[AllocationShare]
     ) -> list[AllocationEntry]:
-        """Distribute gross amount across shares with exact penny reconciliation."""
+        """Distribute gross amount across shares with exact penny reconciliation.
+
+        Args:
+            gross_amount: Total monetary expense.
+            shares: List of cost center percentage shares.
+
+        Returns:
+            list[AllocationEntry]: Calculated allocation lines totaling gross_amount.
+        """
         if not shares:
             raise AllocationDomainError(
                 "Cannot allocate without at least one allocation share."

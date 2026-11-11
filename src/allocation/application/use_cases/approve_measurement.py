@@ -1,3 +1,5 @@
+"""Use case for approving submitted measurements."""
+
 from src.allocation.application.dto import (
     AllocationEntryDTO,
     ApproveMeasurementCommand,
@@ -13,9 +15,22 @@ class ApproveMeasurementUseCase:
     """Orchestrates reviewing and approving a submitted measurement."""
 
     def __init__(self, measurement_repository: MeasurementRepository) -> None:
+        """Initialize use case with measurement repository.
+
+        Args:
+            measurement_repository: Repository for measurement persistence.
+        """
         self._measurement_repository = measurement_repository
 
     async def execute(self, command: ApproveMeasurementCommand) -> MeasurementDTO:
+        """Approve a submitted measurement and finalize its state.
+
+        Args:
+            command: Approval command payload.
+
+        Returns:
+            MeasurementDTO: The approved measurement representation.
+        """
         measurement = await self._measurement_repository.get_by_id(
             command.measurement_id
         )

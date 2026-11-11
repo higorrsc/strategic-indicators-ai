@@ -1,3 +1,5 @@
+"""In-memory repository test doubles for cost allocation domain."""
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -26,15 +28,34 @@ class InMemorySupplierRepository(SupplierRepository):
     """In-memory test double implementation for SupplierRepository."""
 
     def __init__(self) -> None:
+        """Initialize in-memory supplier storage."""
         self._suppliers: dict[UUID, Supplier] = {}
 
     async def add(self, supplier: Supplier) -> None:
+        """Add supplier to in-memory store.
+
+        Args:
+            supplier: Supplier entity to add.
+        """
         self._suppliers[supplier.id] = supplier
 
     async def get_by_id(self, supplier_id: UUID) -> Supplier | None:
+        """Find supplier by ID.
+
+        Args:
+            supplier_id: Supplier UUID.
+
+        Returns:
+            Supplier if found, None otherwise.
+        """
         return self._suppliers.get(supplier_id)
 
     async def list_all(self) -> list[Supplier]:
+        """List all stored suppliers.
+
+        Returns:
+            List of suppliers.
+        """
         return list(self._suppliers.values())
 
 
@@ -42,9 +63,15 @@ class InMemoryContractRepository(ContractRepository):
     """In-memory test double implementation for ContractRepository."""
 
     def __init__(self) -> None:
+        """Initialize in-memory contract storage."""
         self._contracts: dict[UUID, Contract] = {}
 
     async def add(self, contract: Contract) -> None:
+        """Add contract verifying code uniqueness.
+
+        Args:
+            contract: Contract entity to add.
+        """
         for c in self._contracts.values():
             if c.code == contract.code:
                 raise AllocationDomainError(
@@ -53,20 +80,49 @@ class InMemoryContractRepository(ContractRepository):
         self._contracts[contract.id] = contract
 
     async def get_by_id(self, contract_id: UUID) -> Contract | None:
+        """Find contract by ID.
+
+        Args:
+            contract_id: Contract UUID.
+
+        Returns:
+            Contract if found, None otherwise.
+        """
         return self._contracts.get(contract_id)
 
     async def get_by_code(self, code: str) -> Contract | None:
+        """Find contract by alphanumeric code.
+
+        Args:
+            code: Contract code.
+
+        Returns:
+            Contract if found, None otherwise.
+        """
         for c in self._contracts.values():
             if c.code == code:
                 return c
         return None
 
     async def list_all(self, active_only: bool = True) -> list[Contract]:
+        """List all contracts.
+
+        Args:
+            active_only: Whether to filter active only.
+
+        Returns:
+            List of contracts.
+        """
         if active_only:
             return [c for c in self._contracts.values() if c.is_active]
         return list(self._contracts.values())
 
     async def update(self, contract: Contract) -> None:
+        """Update existing contract.
+
+        Args:
+            contract: Modified contract entity.
+        """
         if contract.id not in self._contracts:
             raise ContractNotFoundError(f"Contract with id {contract.id} not found.")
         self._contracts[contract.id] = contract
@@ -76,17 +132,40 @@ class InMemoryMeasurementRepository(MeasurementRepository):
     """In-memory test double implementation for MeasurementRepository."""
 
     def __init__(self) -> None:
+        """Initialize in-memory measurement storage."""
         self._measurements: dict[UUID, Measurement] = {}
 
     async def add(self, measurement: Measurement) -> None:
+        """Add measurement to in-memory store.
+
+        Args:
+            measurement: Measurement entity to add.
+        """
         self._measurements[measurement.id] = measurement
 
     async def get_by_id(self, measurement_id: UUID) -> Measurement | None:
+        """Find measurement by ID.
+
+        Args:
+            measurement_id: Measurement UUID.
+
+        Returns:
+            Measurement if found, None otherwise.
+        """
         return self._measurements.get(measurement_id)
 
     async def list_by_period(
         self, period: Period, state: MeasurementState | None = None
     ) -> list[Measurement]:
+        """List measurements matching period and optional state.
+
+        Args:
+            period: Fiscal period.
+            state: Optional state filter.
+
+        Returns:
+            List of measurements.
+        """
         return [
             m
             for m in self._measurements.values()
@@ -94,9 +173,22 @@ class InMemoryMeasurementRepository(MeasurementRepository):
         ]
 
     async def list_by_contract(self, contract_id: UUID) -> list[Measurement]:
+        """List measurements associated with a contract ID.
+
+        Args:
+            contract_id: Contract UUID.
+
+        Returns:
+            List of measurements.
+        """
         return [m for m in self._measurements.values() if m.contract_id == contract_id]
 
     async def update(self, measurement: Measurement) -> None:
+        """Update existing measurement.
+
+        Args:
+            measurement: Modified measurement entity.
+        """
         if measurement.id not in self._measurements:
             raise MeasurementNotFoundError(
                 f"Measurement with id {measurement.id} not found."

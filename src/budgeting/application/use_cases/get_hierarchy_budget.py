@@ -1,3 +1,5 @@
+"""Use case for calculating direct and hierarchical budget totals."""
+
 from decimal import Decimal
 
 from src.budgeting.application.dto import (
@@ -22,10 +24,24 @@ class GetHierarchyBudgetUseCase:
         cost_center_repository: CostCenterRepository,
         budget_repository: BudgetRepository,
     ) -> None:
+        """Initialize use case with repositories.
+
+        Args:
+            cost_center_repository: Repository for cost center lookups.
+            budget_repository: Repository for budget targets.
+        """
         self._cost_center_repository = cost_center_repository
         self._budget_repository = budget_repository
 
     async def execute(self, query: GetHierarchyBudgetQuery) -> HierarchyBudgetDTO:
+        """Calculate direct and consolidated hierarchical budget figures.
+
+        Args:
+            query: Query containing root cost center ID and period.
+
+        Returns:
+            HierarchyBudgetDTO: Consolidated budget metrics.
+        """
         root = await self._cost_center_repository.get_by_id(query.cost_center_id)
         if root is None:
             raise CostCenterNotFoundError(

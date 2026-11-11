@@ -1,3 +1,5 @@
+"""Cost allocation domain repository contracts package."""
+
 from src.allocation.domain.repositories.contract_repository import (
     ContractRepository,
 )

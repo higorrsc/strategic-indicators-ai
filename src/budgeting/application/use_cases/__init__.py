@@ -1,3 +1,5 @@
+"""Budgeting application use cases package."""
+
 from src.budgeting.application.use_cases.create_cost_center import (
     CreateCostCenterUseCase,
 )

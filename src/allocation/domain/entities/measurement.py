@@ -1,3 +1,5 @@
+"""Measurement aggregate representing contract expenses and lifecycle."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -13,6 +15,8 @@ from src.shared.domain.value_objects import Money, Percentage, Period
 
 
 class MeasurementState(StrEnum):
+    """Lifecycle states for financial measurements."""
+
     DRAFT = "DRAFT"
     SUBMITTED = "SUBMITTED"
     APPROVED = "APPROVED"
@@ -31,9 +35,7 @@ class AllocationEntry:
 
 @dataclass(slots=True)
 class Measurement:
-    """
-    Measurement aggregate representing a contract expense and its cost distribution.
-    """
+    """Aggregate representing a contract expense and its cost distribution."""
 
     contract_id: UUID
     period: Period
@@ -44,26 +46,30 @@ class Measurement:
     entries: list[AllocationEntry] = field(default_factory=list)
 
     def __post_init__(self) -> None:
+        """Validate measurement description and positive gross amount."""
         trimmed = self.description.strip()
         if not trimmed:
             raise AllocationDomainError("Measurement description cannot be empty.")
         self.description = trimmed
         if not self.gross_amount.is_positive():
             raise AllocationDomainError(
-                f"Measurement gross amount must be "
-                f"strictly positive: {self.gross_amount.amount}."
+                f"Gross amount must be positive: {self.gross_amount.amount}."
             )
 
     def set_entries(self, entries: list[AllocationEntry]) -> None:
-        """Assign allocation entries; permitted only while in DRAFT state."""
+        """Assign allocation entries; permitted only while in DRAFT state.
+
+        Args:
+            entries: List of allocated entries.
+        """
         if self.state != MeasurementState.DRAFT:
             raise InvalidMeasurementStateError(
-                f"Cannot modify allocation entries "
-                f"of measurement in '{self.state}' state."
+                f"Cannot modify allocation in state '{self.state}'."
             )
         self.entries = list(entries)
 
     def _validate_entries_reconciliation(self) -> None:
+        """Verify that sum of allocated lines matches gross amount."""
         if not self.entries:
             raise AllocationReconciliationError(
                 "Measurement has no allocation entries."
@@ -74,8 +80,8 @@ class Measurement:
         )
         if total_allocated != self.gross_amount:
             raise AllocationReconciliationError(
-                f"Allocation sum {total_allocated.amount} does not "
-                f"match gross amount {self.gross_amount.amount}."
+                f"Allocation sum {total_allocated.amount} "
+                f"does not match gross amount {self.gross_amount.amount}."
             )
 
     def submit(self) -> None:
@@ -108,7 +114,6 @@ class Measurement:
         """Revert submitted measurement back to draft for correction."""
         if self.state != MeasurementState.SUBMITTED:
             raise InvalidMeasurementStateError(
-                f"Only SUBMITTED measurements can be "
-                f"reverted to DRAFT; current: '{self.state}'."
+                f"Only SUBMITTED measurements can be reverted; current: '{self.state}'."
             )
         self.state = MeasurementState.DRAFT

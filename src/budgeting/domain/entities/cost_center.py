@@ -1,3 +1,5 @@
+"""Cost Center entity representing an organizational budgeting unit."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -21,6 +23,7 @@ class CostCenter:
     is_active: bool = True
 
     def __post_init__(self) -> None:
+        """Validate cost center name and prevent immediate self-parenting."""
         trimmed_name = self.name.strip()
         if not trimmed_name:
             raise InvalidBudgetTargetError("Cost center name cannot be empty.")
@@ -31,15 +34,19 @@ class CostCenter:
             )
 
     def deactivate(self) -> None:
-        """Deactivate cost center."""
+        """Deactivate cost center from active operations."""
         self.is_active = False
 
     def activate(self) -> None:
-        """Activate cost center."""
+        """Activate cost center for operations."""
         self.is_active = True
 
     def reassign_parent(self, new_parent_id: UUID | None) -> None:
-        """Reassign parent cost center preventing self-reference."""
+        """Reassign parent cost center preventing self-reference.
+
+        Args:
+            new_parent_id: New parent UUID or None for root level.
+        """
         if new_parent_id is not None and new_parent_id == self.id:
             raise CircularCostCenterHierarchyError(
                 "Cost center cannot be its own parent."

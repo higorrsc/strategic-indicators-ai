@@ -1,3 +1,5 @@
+"""Supplier entity representing contracting vendors."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -15,6 +17,7 @@ class Supplier:
     id: UUID = field(default_factory=uuid4)
 
     def __post_init__(self) -> None:
+        """Validate supplier fields and strip whitespace."""
         trimmed_name = self.name.strip()
         trimmed_tax_id = self.tax_id.strip()
         if not trimmed_name:

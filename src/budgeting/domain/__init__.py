@@ -1,0 +1,1 @@
+"""Budgeting domain layer package."""

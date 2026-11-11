@@ -1,3 +1,5 @@
+"""Use case for creating and submitting a measurement expense."""
+
 from decimal import Decimal
 
 from src.allocation.application.dto import (
@@ -29,10 +31,24 @@ class SubmitMeasurementUseCase:
         measurement_repository: MeasurementRepository,
         contract_repository: ContractRepository,
     ) -> None:
+        """Initialize use case with measurement and contract repositories.
+
+        Args:
+            measurement_repository: Repository for measurement persistence.
+            contract_repository: Repository for contract lookups.
+        """
         self._measurement_repository = measurement_repository
         self._contract_repository = contract_repository
 
     async def execute(self, command: SubmitMeasurementCommand) -> MeasurementDTO:
+        """Create and submit a measurement with calculated exact allocation lines.
+
+        Args:
+            command: Submission command payload.
+
+        Returns:
+            MeasurementDTO: The submitted measurement and reconciled allocation entries.
+        """
         contract = await self._contract_repository.get_by_id(command.contract_id)
         if contract is None:
             raise ContractNotFoundError(

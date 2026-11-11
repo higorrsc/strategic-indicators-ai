@@ -1,3 +1,5 @@
+"""Cost allocation domain entities package."""
+
 from src.allocation.domain.entities.contract import AllocationShare, Contract
 from src.allocation.domain.entities.measurement import (
     AllocationEntry,

@@ -5,6 +5,11 @@ class DomainError(Exception):
     """Base exception for all domain rule violations."""
 
     def __init__(self, message: str) -> None:
+        """Initialize domain error with message.
+
+        Args:
+            message: Explanation of domain rule violation.
+        """
         super().__init__(message)
         self.message = message
 

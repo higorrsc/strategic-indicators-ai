@@ -1,3 +1,5 @@
+"""Application settings module using pydantic-settings."""
+
 from functools import lru_cache
 from typing import Literal
 
@@ -29,5 +31,9 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """Return cached application settings singleton."""
+    """Return cached application settings singleton.
+
+    Returns:
+        Settings: The singleton configuration instance.
+    """
     return Settings()
