@@ -7,7 +7,13 @@ authors = [
   { name = "Higor Rodrigues dos Santos Cruz", email = "higorrsc@gmail.com" },
 ]
 requires-python = ">=3.15.0"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.10.0",
+    "pydantic-ai>=2.67.0",
+    "pydantic-settings>=2.7.0",
+]
 
 [dependency-groups]
 dev = [
@@ -15,6 +21,8 @@ dev = [
   "ipython>=9.18.1",
   "pyrefly>=1.4.1",
   "pytest>=9.2.0",
+  "pytest-asyncio>=0.25.0",
+  "pytest-bdd>=7.3.0",
   "ruff>=0.17.4",
 ]
 
