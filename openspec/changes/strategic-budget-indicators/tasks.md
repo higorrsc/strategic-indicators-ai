@@ -8,10 +8,10 @@
 
 ## 2. Budgeting Bounded Context
 
-- [ ] 2.1 Implement `CostCenter` aggregate entity with hierarchical tree links and cycle detection in `src/budgeting/domain/entities/cost_center.py` and verify with unit tests
-- [ ] 2.2 Implement `BudgetTarget` entity in `src/budgeting/domain/entities/budget_target.py` with non-negative monetary target invariants and verify with unit tests
-- [ ] 2.3 Implement repository interface and in-memory test double for cost centers and budgets in `src/budgeting/domain/repositories/`
-- [ ] 2.4 Implement application use cases (`CreateCostCenterUseCase`, `SetBudgetTargetUseCase`, `GetHierarchyBudgetUseCase`) in `src/budgeting/application/use_cases/` and verify with application unit tests
+- [x] 2.1 Implement `CostCenter` aggregate entity with hierarchical tree links and cycle detection in `src/budgeting/domain/entities/cost_center.py` and verify with unit tests
+- [x] 2.2 Implement `BudgetTarget` entity in `src/budgeting/domain/entities/budget_target.py` with non-negative monetary target invariants and verify with unit tests
+- [x] 2.3 Implement repository interface and in-memory test double for cost centers and budgets in `src/budgeting/domain/repositories/`
+- [x] 2.4 Implement application use cases (`CreateCostCenterUseCase`, `SetBudgetTargetUseCase`, `GetHierarchyBudgetUseCase`) in `src/budgeting/application/use_cases/` and verify with application unit tests
 
 ## 3. Cost Allocation Bounded Context
 
