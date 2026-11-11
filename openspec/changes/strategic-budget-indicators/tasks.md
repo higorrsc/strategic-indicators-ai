@@ -15,11 +15,11 @@
 
 ## 3. Cost Allocation Bounded Context
 
-- [ ] 3.1 Implement `Supplier` and `Contract` entities with default allocation templates in `src/allocation/domain/entities/` and verify with unit tests
-- [ ] 3.2 Implement `Measurement` aggregate entity with lifecycle states (`DRAFT`, `SUBMITTED`, `APPROVED`, `CANCELLED`) and immutable state transition guards in `src/allocation/domain/entities/measurement.py`
-- [ ] 3.3 Implement `ExactPennyAllocator` domain service reconciling rounding discrepancies and validating 100% distribution in `src/allocation/domain/services/allocator.py` and verify with unit tests
-- [ ] 3.4 Implement repository interfaces and in-memory test doubles in `src/allocation/domain/repositories/`
-- [ ] 3.5 Implement use cases (`RegisterContractUseCase`, `SubmitMeasurementUseCase`, `ApproveMeasurementUseCase`) in `src/allocation/application/use_cases/` and verify with application unit tests
+- [x] 3.1 Implement `Supplier` and `Contract` entities with default allocation templates in `src/allocation/domain/entities/` and verify with unit tests
+- [x] 3.2 Implement `Measurement` aggregate entity with lifecycle states (`DRAFT`, `SUBMITTED`, `APPROVED`, `CANCELLED`) and immutable state transition guards in `src/allocation/domain/entities/measurement.py`
+- [x] 3.3 Implement `ExactPennyAllocator` domain service reconciling rounding discrepancies and validating 100% distribution in `src/allocation/domain/services/allocator.py` and verify with unit tests
+- [x] 3.4 Implement repository interfaces and in-memory test doubles in `src/allocation/domain/repositories/`
+- [x] 3.5 Implement use cases (`RegisterContractUseCase`, `SubmitMeasurementUseCase`, `ApproveMeasurementUseCase`) in `src/allocation/application/use_cases/` and verify with application unit tests
 
 ## 4. Budget Indicators & Simulation Bounded Context
 
