@@ -1,0 +1,147 @@
+{
+  "cSpell.language": "en,pt-BR",
+  "cSpell.words": [],
+  // ----------------------------
+  // DOCKER
+  // ----------------------------
+  "docker.languageserver.formatter.ignoreMultilineInstructions": true,
+  // ----------------------------
+  // EDITOR
+  // ----------------------------
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "editor.renderWhitespace": "boundary",
+  "editor.rulers": [
+    88
+  ],
+  "editor.tabSize": 4,
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  // ----------------------------
+  // PYTHON
+  // ----------------------------
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.autoSearchPaths": false,
+  "python.analysis.importFormat": "absolute",
+  "python.analysis.inlayHints.callArgumentNames": "all",
+  "python.analysis.typeCheckingMode": "off",
+  "python.defaultInterpreterPath": ".venv/bin/python",
+  "python.terminal.activateEnvironment": false,
+  "python.testing.pytestArgs": [
+    "--import-mode=importlib",
+    "-v",
+    "tests"
+  ],
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "always",
+      "source.organizeImports.ruff": "always"
+    },
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.wordBasedSuggestions": "off",
+    "diffEditor.ignoreTrimWhitespace": false
+  },
+  // ----------------------------
+  // RUFF
+  // ----------------------------
+  "ruff.path": [
+    "uv",
+    "run",
+    "ruff"
+  ],
+  // ----------------------------
+  // HTML / JINJA
+  // ----------------------------
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features",
+    "editor.tabSize": 2
+  },
+  "[jinja-html]": {
+    "editor.defaultFormatter": "vscode.html-language-features",
+    "editor.tabSize": 2
+  },
+  // ----------------------------
+  // CSS
+  // ----------------------------
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features",
+    "editor.tabSize": 2
+  },
+  // ----------------------------
+  // JAVASCRIPT
+  // ----------------------------
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.tabSize": 2
+  },
+  // ----------------------------
+  // JSON
+  // ----------------------------
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.tabSize": 2
+  },
+  // ----------------------------
+  // YAML
+  // ----------------------------
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.tabSize": 2
+  },
+  // ----------------------------
+  // DOCKERFILE
+  // ----------------------------
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-containers",
+    "editor.tabSize": 2
+  },
+  // ----------------------------
+  // MAKEFILE
+  // ----------------------------
+  "[makefile]": {
+    "editor.insertSpaces": false,
+    "editor.detectIndentation": false
+  },
+  // ----------------------------
+  // CSV
+  // ----------------------------
+  "[csv]": {
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    },
+    "editor.wordWrap": "off"
+  },
+  // ----------------------------
+  // FILE ASSOCIATIONS
+  // ----------------------------
+  "files.associations": {
+    "*.csv": "csv",
+    "*.env": "dotenv",
+    "Dockerfile*": "dockerfile",
+    "Makefile*": "makefile"
+  },
+  // ----------------------------
+  // SEARCH / IGNORE
+  // ----------------------------
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true,
+    "**/htmlcov": true,
+    "**/node_modules": true,
+    "**/.venv": true
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true,
+    "**/.venv": true
+  }
+}

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+
+echo "=== Running Pre-Commit Quality Gate ==="
+
+echo "--> [1/4] Checking code formatting (Ruff)..."
+uv run ruff format --check .
+
+echo "--> [2/4] Checking linting and docstrings (Ruff)..."
+uv run ruff check .
+
+echo "--> [3/4] Checking static types (Pyrefly)..."
+uv run pyrefly check
+
+echo "--> [4/4] Executing automated tests (Pytest)..."
+uv run pytest -q
+
+echo "=== Pre-Commit Quality Gate: PASSED ==="

@@ -1,0 +1,130 @@
+[project]
+name = "strategic-indicators-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+  { name = "Higor Rodrigues dos Santos Cruz", email = "higorrsc@gmail.com" },
+]
+requires-python = ">=3.15.0"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "ipykernel>=7.4.0",
+  "ipython>=9.18.1",
+  "pyrefly>=1.4.1",
+  "pytest>=9.2.0",
+  "ruff>=0.17.4",
+]
+
+
+# ------------------------------------------------------
+# PyRefly
+# ------------------------------------------------------
+
+[tool.pyrefly]
+python-version = "3.15"
+project-includes = ["src", "tests"]
+search-path = ["."]
+check-unannotated-defs = true
+infer-return-types = "never"
+
+[tool.pyrefly.errors]
+implicit-any-parameter = "error"
+no-any-return = "error"
+implicit-any = "error"
+unannotated-return = "error"
+incompatible-comparison = "error"
+unnecessary-comparison = "error"
+
+# ------------------------------------------------------
+# Mypy
+# ------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.15"
+# Type checking
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true
+warn_return_any = true
+# Imports / packages
+explicit_package_bases = true
+ignore_missing_imports = true
+namespace_packages = true
+# Warnings
+warn_unused_configs = true
+# Exclusions
+exclude = ["migrations/versions"]
+
+# ------------------------------------------------------
+# Ruff
+# ------------------------------------------------------
+
+[tool.ruff]
+line-length = 88
+target-version = "py315"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+# E: pycodestyle errors
+# F: Pyflakes
+# I: import sort
+# W: warnings
+# B: bugbear
+# UP: pyupgrade
+# N: naming
+# SIM: simplify
+# ASYNC: async-specific checks
+# RUF: Ruff-specific rules
+select = ["E", "F", "I", "W", "B", "UP", "N", "SIM", "ASYNC", "RUF"]
+ignore = []
+
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 88
+
+# ------------------------------------------------------
+# Pytest
+# ------------------------------------------------------
+
+[tool.pytest.ini_options]
+pythonpath = "."
+python_files = [
+  "tests.py",
+  "tests_*.py",
+  "*_tests.py",
+  "test_*.py",
+  "*_test.py",
+]
+addopts = "-v --import-mode=importlib"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+filterwarnings = []
+
+# ------------------------------------------------------
+# Coverage
+# ------------------------------------------------------
+
+[tool.coverage.run]
+omit = ["*/__init__.py", "tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "if self.debug:",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+  "class .*\\bProtocol\\):",
+  "@(abc\\.)?abstractmethod",
+]
