@@ -21,8 +21,8 @@
 
 ## 4. Alembic Migrations & Schema Generation
 
-- [ ] 4.1 Generate initial Alembic migration revision including all budgeting and cost allocation tables in `migrations/versions/`
-- [ ] 4.2 Verify automated migration execution (`alembic upgrade head`) against async engine and confirm schema creation
+- [x] 4.1 Generate initial Alembic migration revision including all budgeting and cost allocation tables in `migrations/versions/`
+- [x] 4.2 Verify automated migration execution (`alembic upgrade head`) against async engine and confirm schema creation
 
 ## 5. Dependency Injection Wiring & Test Suite Adaptation
 
