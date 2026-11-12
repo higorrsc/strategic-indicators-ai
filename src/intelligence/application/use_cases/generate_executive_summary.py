@@ -83,7 +83,12 @@ class GenerateExecutiveSummaryUseCase:
                 is_fallback=False,
                 ai_provider=self._settings.AI_PROVIDER,
             )
-        except AIProviderError:
+        except AIProviderError as err:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "AI provider failed, falling back: %s", err
+            )
             # Deterministic graceful degradation without crashing financial delivery
             overruns = [
                 i

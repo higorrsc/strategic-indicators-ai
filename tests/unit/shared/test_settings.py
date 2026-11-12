@@ -2,7 +2,7 @@ from src.shared.config.settings import Settings
 
 
 def test_should_load_default_settings() -> None:
-    settings = Settings()
+    settings = Settings(_env_file=None)
     assert settings.APP_NAME == "Strategic Indicators AI"
     assert settings.AI_PROVIDER == "ollama"
     assert settings.AI_MODEL == "llama3.2"

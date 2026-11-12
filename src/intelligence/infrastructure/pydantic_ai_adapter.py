@@ -9,6 +9,7 @@ from typing import Any
 from pydantic_ai import Agent
 from pydantic_ai.models import Model
 from pydantic_ai.models.google import GoogleModel
+from pydantic_ai.models.ollama import OllamaModel
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.google import GoogleProvider
 from pydantic_ai.providers.ollama import OllamaProvider
@@ -49,23 +50,28 @@ class PydanticAIAdapter(AIPort):
                 model=model,
                 name="executive_summary_agent",
                 output_type=ExecutiveSummaryResponse,
+                retries=3,
                 instructions=(
                     "You are a senior financial analyst and executive advisor. "
                     "Analyze organizational budget performance indicators, variance "
                     "thresholds, and detected cost allocation anomalies. Produce an "
                     "executive synthesis highlighting financial health, critical root "
-                    "causes, and actionable strategic recommendations."
+                    "causes, and actionable strategic recommendations. "
+                    "Always output valid JSON strictly conforming to "
+                    "ExecutiveSummaryResponse."
                 ),
             )
             self._scenario_agent = Agent(
                 model=model,
                 name="scenario_evaluation_agent",
                 output_type=ScenarioEvaluationResponse,
+                retries=3,
                 instructions=(
                     "You are a strategic finance advisor. Evaluate the results of a "
                     "what-if budget simulation across cost centers. Assess strategic "
                     "feasibility, identify key operational trade-offs, and recommend "
-                    "actions."
+                    "actions. Always output valid JSON strictly conforming to "
+                    "ScenarioEvaluationResponse."
                 ),
             )
 
@@ -83,7 +89,7 @@ class PydanticAIAdapter(AIPort):
                 base_url=self._settings.AI_BASE_URL,
                 api_key=self._settings.AI_API_KEY or "ollama",
             )
-            return OpenAIChatModel(model_name, provider=ollama_provider)
+            return OllamaModel(model_name, provider=ollama_provider)
 
         if provider == "openai":
             api_key = (
@@ -143,9 +149,11 @@ class PydanticAIAdapter(AIPort):
             f"Period: {period}\n\n"
             f"Indicators Summary:\n"
             + "\n".join(
-                f"- Cost Center {i.cost_center_code}: Planned={i.budgeted_amount}, "
-                f"Actual={i.actual_amount}, Variance={i.variance_amount} "
-                f"({i.execution_rate}), Status={i.status.value}"
+                f"- Cost Center {i.cost_center_code}: "
+                f"Planned={i.budgeted_amount.amount} {i.budgeted_amount.currency}, "
+                f"Actual={i.actual_amount.amount} {i.actual_amount.currency}, "
+                f"Variance={i.variance_amount.amount} {i.variance_amount.currency} "
+                f"({float(i.execution_rate.value):.1f}%), Status={i.status.value}"
                 for i in indicators
             )
             + "\n\nDetected Anomalies:\n"
@@ -203,9 +211,12 @@ class PydanticAIAdapter(AIPort):
             f"Cost Center Impacts:\n"
             + "\n".join(
                 f"- Cost Center {imp.cost_center_code}: "
-                f"Baseline={imp.baseline_actual}, "
-                f"Simulated={imp.simulated_actual}, "
-                f"Delta={imp.delta_actual}, "
+                f"Baseline={imp.baseline_actual.amount} "
+                f"{imp.baseline_actual.currency}, "
+                f"Simulated={imp.simulated_actual.amount} "
+                f"{imp.simulated_actual.currency}, "
+                f"Delta={imp.delta_actual.amount} "
+                f"{imp.delta_actual.currency}, "
                 f"Baseline Status={imp.baseline_status.value}, "
                 f"Simulated Status={imp.simulated_status.value}, "
                 f"New Overrun={imp.new_overrun}"
