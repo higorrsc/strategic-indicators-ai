@@ -144,3 +144,26 @@ async def test_should_reject_negative_budget_target(
         },
     )
     assert resp_budget.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_should_list_cost_centers_with_pagination(
+    client: AsyncClient,
+) -> None:
+    """Verify paginated listing of active cost centers."""
+    # Seed a cost center first
+    await client.post(
+        "/api/v1/cost-centers",
+        json={"code": "4.0", "name": "Operations", "parent_id": None},
+    )
+
+    resp = await client.get("/api/v1/cost-centers?page=1&perPage=5")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert "data" in payload
+    assert "pagination" in payload
+    assert "links" in payload
+    assert payload["pagination"]["page"] == 1
+    assert payload["pagination"]["perPage"] == 5
+    assert payload["pagination"]["totalItems"] >= 1
+    assert payload["links"]["self"] == "/api/v1/cost-centers?page=1&perPage=5"

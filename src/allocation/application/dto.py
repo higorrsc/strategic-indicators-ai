@@ -6,6 +6,16 @@ from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
+class PaginatedResultDTO[T]:
+    """Application DTO holding paginated slice items and total count."""
+
+    items: list[T]
+    total_items: int
+    page: int
+    per_page: int
+
+
+@dataclass(frozen=True, slots=True)
 class AllocationShareDTO:
     """DTO representing an allocation percentage share for a cost center."""
 
@@ -85,6 +95,8 @@ class ListContractsQuery:
 
     supplier_id: UUID | None = None
     active_only: bool = True
+    page: int = 1
+    per_page: int = 20
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,3 +106,5 @@ class ListMeasurementsQuery:
     period: str | None = None
     contract_id: UUID | None = None
     state: str | None = None
+    page: int = 1
+    per_page: int = 20

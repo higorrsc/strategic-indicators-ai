@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Path, Query, status
+from fastapi import APIRouter, Path, Query, Request, status
 
 from src.allocation.application.dto import (
     AllocationShareDTO,
@@ -35,6 +35,12 @@ from src.presentation.schemas.allocation import (
     ContractResponse,
     MeasurementResponse,
     MeasurementSubmitRequest,
+)
+from src.presentation.schemas.pagination import (
+    PaginatedResponse,
+    PaginationMeta,
+    build_pagination_links,
+    calculate_total_pages,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Cost Allocation"])
@@ -90,10 +96,11 @@ async def register_contract(
 
 @router.get(
     "/contracts",
-    response_model=list[ContractResponse],
+    response_model=PaginatedResponse[ContractResponse],
     summary="List vendor contracts",
 )
 async def list_contracts(
+    request: Request,
     use_case: ListContractsUseCaseDep,
     active_only: Annotated[
         bool, Query(description="Filter active contracts only")
@@ -101,21 +108,39 @@ async def list_contracts(
     supplier_id: Annotated[
         UUID | None, Query(description="Optional supplier UUID filter")
     ] = None,
-) -> list[ContractResponse]:
-    """Query vendor contracts with optional filtering.
+    page: Annotated[int, Query(ge=1, description="Page number (1-based)")] = 1,
+    per_page: Annotated[
+        int,
+        Query(
+            alias="perPage",
+            ge=1,
+            le=100,
+            description="Number of items per page (1-100)",
+        ),
+    ] = 20,
+) -> PaginatedResponse[ContractResponse]:
+    """Query vendor contracts with optional filtering and pagination.
 
     Args:
+        request: FastAPI HTTP request object.
         use_case: ListContractsUseCase dependency.
         active_only: Whether to return only active contracts.
         supplier_id: Optional supplier UUID filter.
+        page: Page number (1-based).
+        per_page: Number of items per page.
 
     Returns:
-        list[ContractResponse]: List of matching contracts.
+        PaginatedResponse[ContractResponse]: Paginated contracts envelope.
     """
-    contracts = await use_case.execute(
-        ListContractsQuery(supplier_id=supplier_id, active_only=active_only)
+    result = await use_case.execute(
+        ListContractsQuery(
+            supplier_id=supplier_id,
+            active_only=active_only,
+            page=page,
+            per_page=per_page,
+        )
     )
-    return [
+    data = [
         ContractResponse(
             id=c.id,
             code=c.code,
@@ -130,8 +155,25 @@ async def list_contracts(
             ],
             is_active=c.is_active,
         )
-        for c in contracts
+        for c in result.items
     ]
+    total_pages = calculate_total_pages(result.total_items, result.per_page)
+    links = build_pagination_links(
+        request=request,
+        page=result.page,
+        per_page=result.per_page,
+        total_pages=total_pages,
+    )
+    return PaginatedResponse(
+        data=data,
+        pagination=PaginationMeta(
+            page=result.page,
+            per_page=result.per_page,
+            total_items=result.total_items,
+            total_pages=total_pages,
+        ),
+        links=links,
+    )
 
 
 @router.get(
@@ -324,10 +366,11 @@ async def get_measurement(
 
 @router.get(
     "/measurements",
-    response_model=list[MeasurementResponse],
+    response_model=PaginatedResponse[MeasurementResponse],
     summary="List financial measurements",
 )
 async def list_measurements(
+    request: Request,
     use_case: ListMeasurementsUseCaseDep,
     period: Annotated[
         str | None,
@@ -348,22 +391,41 @@ async def list_measurements(
             )
         ),
     ] = None,
-) -> list[MeasurementResponse]:
-    """Query financial measurements with multi-criteria filtering.
+    page: Annotated[int, Query(ge=1, description="Page number (1-based)")] = 1,
+    per_page: Annotated[
+        int,
+        Query(
+            alias="perPage",
+            ge=1,
+            le=100,
+            description="Number of items per page (1-100)",
+        ),
+    ] = 20,
+) -> PaginatedResponse[MeasurementResponse]:
+    """Query financial measurements with multi-criteria filtering and pagination.
 
     Args:
+        request: FastAPI HTTP request object.
         use_case: ListMeasurementsUseCase dependency.
         period: Optional fiscal period filter.
         contract_id: Optional contract UUID filter.
         state: Optional measurement lifecycle state filter.
+        page: Page number (1-based).
+        per_page: Number of items per page.
 
     Returns:
-        list[MeasurementResponse]: List of matching measurements.
+        PaginatedResponse[MeasurementResponse]: Paginated measurements envelope.
     """
-    measurements = await use_case.execute(
-        ListMeasurementsQuery(period=period, contract_id=contract_id, state=state)
+    result = await use_case.execute(
+        ListMeasurementsQuery(
+            period=period,
+            contract_id=contract_id,
+            state=state,
+            page=page,
+            per_page=per_page,
+        )
     )
-    return [
+    data = [
         MeasurementResponse(
             id=m.id,
             contract_id=m.contract_id,
@@ -382,5 +444,22 @@ async def list_measurements(
                 for e in m.entries
             ],
         )
-        for m in measurements
+        for m in result.items
     ]
+    total_pages = calculate_total_pages(result.total_items, result.per_page)
+    links = build_pagination_links(
+        request=request,
+        page=result.page,
+        per_page=result.per_page,
+        total_pages=total_pages,
+    )
+    return PaginatedResponse(
+        data=data,
+        pagination=PaginationMeta(
+            page=result.page,
+            per_page=result.per_page,
+            total_items=result.total_items,
+            total_pages=total_pages,
+        ),
+        links=links,
+    )

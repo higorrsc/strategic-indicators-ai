@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Path, Query, status
+from fastapi import APIRouter, Path, Query, Request, status
 
 from src.budgeting.application.dto import (
     CreateCostCenterCommand,
@@ -25,6 +25,12 @@ from src.presentation.schemas.budgeting import (
     CostCenterCreateRequest,
     CostCenterResponse,
     HierarchyBudgetResponse,
+)
+from src.presentation.schemas.pagination import (
+    PaginatedResponse,
+    PaginationMeta,
+    build_pagination_links,
+    calculate_total_pages,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Budgeting"])
@@ -101,22 +107,40 @@ async def get_cost_center(
 
 @router.get(
     "/cost-centers",
-    response_model=list[CostCenterResponse],
+    response_model=PaginatedResponse[CostCenterResponse],
     summary="List all active cost centers",
 )
 async def list_cost_centers(
+    request: Request,
     repo: CostCenterRepoDep,
-) -> list[CostCenterResponse]:
-    """List all registered active cost centers.
+    page: Annotated[int, Query(ge=1, description="Page number (1-based)")] = 1,
+    per_page: Annotated[
+        int,
+        Query(
+            alias="perPage",
+            ge=1,
+            le=100,
+            description="Number of items per page (1-100)",
+        ),
+    ] = 20,
+) -> PaginatedResponse[CostCenterResponse]:
+    """List all registered active cost centers with pagination.
 
     Args:
+        request: FastAPI HTTP request object.
         repo: Cost center repository dependency.
+        page: Page number (1-based).
+        per_page: Number of items per page.
 
     Returns:
-        list[CostCenterResponse]: List of cost centers.
+        PaginatedResponse[CostCenterResponse]: Paginated cost centers envelope.
     """
     centers = await repo.list_all(active_only=True)
-    return [
+    total_items = len(centers)
+    offset = (page - 1) * per_page
+    sliced = centers[offset : offset + per_page]
+
+    data = [
         CostCenterResponse(
             id=cc.id,
             code=cc.code.value,
@@ -124,8 +148,25 @@ async def list_cost_centers(
             parent_id=cc.parent_id,
             is_active=cc.is_active,
         )
-        for cc in centers
+        for cc in sliced
     ]
+    total_pages = calculate_total_pages(total_items, per_page)
+    links = build_pagination_links(
+        request=request,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )
+    return PaginatedResponse(
+        data=data,
+        pagination=PaginationMeta(
+            page=page,
+            per_page=per_page,
+            total_items=total_items,
+            total_pages=total_pages,
+        ),
+        links=links,
+    )
 
 
 @router.post(

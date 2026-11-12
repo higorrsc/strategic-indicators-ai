@@ -242,18 +242,31 @@ class TestListContractsUseCase:
 
         # Default: active only
         active = await use_case.execute()
-        assert len(active) == 2
+        assert len(active.items) == 2
+        assert active.total_items == 2
+        assert active.page == 1
+        assert active.per_page == 20
 
         # All contracts
         all_contracts = await use_case.execute(ListContractsQuery(active_only=False))
-        assert len(all_contracts) == 3
+        assert len(all_contracts.items) == 3
+        assert all_contracts.total_items == 3
 
         # Filter by supplier
         sup1_active = await use_case.execute(
             ListContractsQuery(supplier_id=sup1, active_only=True)
         )
-        assert len(sup1_active) == 1
-        assert sup1_active[0].code == "CT-01"
+        assert len(sup1_active.items) == 1
+        assert sup1_active.items[0].code == "CT-01"
+
+        # Pagination slicing
+        paginated = await use_case.execute(
+            ListContractsQuery(active_only=False, page=1, per_page=2)
+        )
+        assert len(paginated.items) == 2
+        assert paginated.total_items == 3
+        assert paginated.page == 1
+        assert paginated.per_page == 2
 
 
 class TestListMeasurementsUseCase:
@@ -285,7 +298,10 @@ class TestListMeasurementsUseCase:
         use_case = ListMeasurementsUseCase(repo)
 
         res = await use_case.execute(ListMeasurementsQuery(period="2026-03"))
-        assert len(res) == 1
-        assert res[0].description == "March Bill"
-        assert res[0].state == "APPROVED"
-        assert len(res[0].entries) == 1
+        assert len(res.items) == 1
+        assert res.total_items == 1
+        assert res.page == 1
+        assert res.per_page == 20
+        assert res.items[0].description == "March Bill"
+        assert res.items[0].state == "APPROVED"
+        assert len(res.items[0].entries) == 1

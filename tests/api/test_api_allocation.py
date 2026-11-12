@@ -172,17 +172,28 @@ async def test_should_list_contracts_and_measurements_with_filters(
     assert resp_c.status_code == 201
     contract_id = resp_c.json()["id"]
 
-    # 4. List contracts
-    resp_list_c = await client.get("/api/v1/contracts")
+    # 4. List contracts (paginated)
+    resp_list_c = await client.get("/api/v1/contracts?page=1&perPage=20")
     assert resp_list_c.status_code == 200
-    contracts = resp_list_c.json()
-    assert any(c["id"] == contract_id for c in contracts)
+    contracts_payload = resp_list_c.json()
+    assert "data" in contracts_payload
+    assert "pagination" in contracts_payload
+    assert "links" in contracts_payload
+    assert contracts_payload["pagination"]["page"] == 1
+    assert contracts_payload["pagination"]["perPage"] == 20
+    assert any(c["id"] == contract_id for c in contracts_payload["data"])
 
-    # Filter contracts by supplier
-    resp_sup_c = await client.get(f"/api/v1/contracts?supplier_id={supplier_id}")
+    # Filter contracts by supplier with pagination
+    resp_sup_c = await client.get(
+        f"/api/v1/contracts?supplier_id={supplier_id}&page=1&perPage=10"
+    )
     assert resp_sup_c.status_code == 200
-    sup_contracts = resp_sup_c.json()
-    assert all(c["supplier_id"] == str(supplier_id) for c in sup_contracts)
+    sup_payload = resp_sup_c.json()
+    assert all(c["supplier_id"] == str(supplier_id) for c in sup_payload["data"])
+    assert (
+        sup_payload["links"]["self"]
+        == f"/api/v1/contracts?supplier_id={supplier_id}&page=1&perPage=10"
+    )
 
     # 5. Submit measurements across periods
     resp_m1 = await client.post(
@@ -214,12 +225,14 @@ async def test_should_list_contracts_and_measurements_with_filters(
     # Approve m1
     await client.post(f"/api/v1/measurements/{m1_id}/approve")
 
-    # 6. List measurements by period
+    # 6. List measurements by period (paginated)
     resp_m_apr = await client.get("/api/v1/measurements?period=2026-04")
     assert resp_m_apr.status_code == 200
     apr_data = resp_m_apr.json()
-    assert any(m["id"] == m1_id for m in apr_data)
-    assert not any(m["id"] == m2_id for m in apr_data)
+    assert apr_data["pagination"]["totalItems"] >= 1
+    assert any(m["id"] == m1_id for m in apr_data["data"])
+    assert not any(m["id"] == m2_id for m in apr_data["data"])
+    assert "period=2026-04" in apr_data["links"]["self"]
 
     # List measurements by state
     resp_approved = await client.get(
@@ -227,10 +240,23 @@ async def test_should_list_contracts_and_measurements_with_filters(
     )
     assert resp_approved.status_code == 200
     approved_data = resp_approved.json()
-    assert len(approved_data) == 1
-    assert approved_data[0]["id"] == m1_id
+    assert len(approved_data["data"]) == 1
+    assert approved_data["data"][0]["id"] == m1_id
+
+    # List measurements with slicing
+    resp_slice = await client.get(
+        f"/api/v1/measurements?contract_id={contract_id}&page=1&perPage=1"
+    )
+    assert resp_slice.status_code == 200
+    slice_data = resp_slice.json()
+    assert len(slice_data["data"]) == 1
+    assert slice_data["pagination"]["totalPages"] == 2
+    assert slice_data["links"]["next"] is not None
 
     # List measurements for non-existent period
     resp_empty = await client.get("/api/v1/measurements?period=2029-12")
     assert resp_empty.status_code == 200
-    assert resp_empty.json() == []
+    empty_payload = resp_empty.json()
+    assert empty_payload["data"] == []
+    assert empty_payload["pagination"]["totalItems"] == 0
+    assert empty_payload["pagination"]["totalPages"] == 0

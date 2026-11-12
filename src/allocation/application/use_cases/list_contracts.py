@@ -6,6 +6,7 @@ from src.allocation.application.dto import (
     AllocationShareDTO,
     ContractDTO,
     ListContractsQuery,
+    PaginatedResultDTO,
 )
 from src.allocation.domain.repositories.contract_repository import (
     ContractRepository,
@@ -13,7 +14,7 @@ from src.allocation.domain.repositories.contract_repository import (
 
 
 class ListContractsUseCase:
-    """Orchestrates contract querying with optional filtering."""
+    """Orchestrates contract querying with optional filtering and pagination."""
 
     def __init__(self, contract_repository: ContractRepository) -> None:
         """Initialize use case with contract repository.
@@ -25,21 +26,25 @@ class ListContractsUseCase:
 
     async def execute(
         self, query: ListContractsQuery | None = None
-    ) -> list[ContractDTO]:
-        """Query contracts matching filter criteria.
+    ) -> PaginatedResultDTO[ContractDTO]:
+        """Query contracts matching filter criteria and pagination.
 
         Args:
-            query: Optional filter parameters.
+            query: Optional filter and pagination parameters.
 
         Returns:
-            list[ContractDTO]: List of matching contracts.
+            PaginatedResultDTO[ContractDTO]: Paginated contracts result.
         """
         q = query or ListContractsQuery()
         contracts = await self._contract_repository.list_all(active_only=q.active_only)
         if q.supplier_id is not None:
             contracts = [c for c in contracts if c.supplier_id == q.supplier_id]
 
-        return [
+        total_items = len(contracts)
+        offset = (q.page - 1) * q.per_page
+        sliced = contracts[offset : offset + q.per_page]
+
+        dtos = [
             ContractDTO(
                 id=c.id,
                 code=c.code,
@@ -54,5 +59,11 @@ class ListContractsUseCase:
                 ],
                 is_active=c.is_active,
             )
-            for c in contracts
+            for c in sliced
         ]
+        return PaginatedResultDTO(
+            items=dtos,
+            total_items=total_items,
+            page=q.page,
+            per_page=q.per_page,
+        )
