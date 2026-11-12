@@ -183,6 +183,31 @@ class InMemoryMeasurementRepository(MeasurementRepository):
         """
         return [m for m in self._measurements.values() if m.contract_id == contract_id]
 
+    async def find(
+        self,
+        period: Period | None = None,
+        contract_id: UUID | None = None,
+        state: MeasurementState | None = None,
+    ) -> list[Measurement]:
+        """Find measurements matching optional criteria.
+
+        Args:
+            period: Optional fiscal period filter.
+            contract_id: Optional contract UUID filter.
+            state: Optional measurement lifecycle state filter.
+
+        Returns:
+            List of matching measurements.
+        """
+        results = list(self._measurements.values())
+        if period is not None:
+            results = [m for m in results if m.period == period]
+        if contract_id is not None:
+            results = [m for m in results if m.contract_id == contract_id]
+        if state is not None:
+            results = [m for m in results if m.state == state]
+        return results
+
     async def update(self, measurement: Measurement) -> None:
         """Update existing measurement.
 

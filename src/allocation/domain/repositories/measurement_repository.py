@@ -56,6 +56,24 @@ class MeasurementRepository(Protocol):
         """
         ...
 
+    async def find(
+        self,
+        period: Period | None = None,
+        contract_id: UUID | None = None,
+        state: MeasurementState | None = None,
+    ) -> list[Measurement]:
+        """Find measurements matching optional criteria.
+
+        Args:
+            period: Optional fiscal period filter.
+            contract_id: Optional contract UUID filter.
+            state: Optional measurement lifecycle state filter.
+
+        Returns:
+            List of matching measurements.
+        """
+        ...
+
     async def update(self, measurement: Measurement) -> None:
         """Update existing measurement.
 

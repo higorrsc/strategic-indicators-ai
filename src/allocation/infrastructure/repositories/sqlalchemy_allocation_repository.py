@@ -326,6 +326,32 @@ class SqlAlchemyMeasurementRepository(MeasurementRepository):
         result = await self._session.execute(stmt)
         return [_to_measurement_entity(m) for m in result.scalars().all()]
 
+    async def find(
+        self,
+        period: Period | None = None,
+        contract_id: UUID | None = None,
+        state: MeasurementState | None = None,
+    ) -> list[Measurement]:
+        """Find measurements matching optional criteria.
+
+        Args:
+            period: Optional fiscal period filter.
+            contract_id: Optional contract UUID filter.
+            state: Optional measurement lifecycle state filter.
+
+        Returns:
+            List of matching measurements.
+        """
+        stmt = select(MeasurementModel)
+        if period is not None:
+            stmt = stmt.where(MeasurementModel.period == period.value)
+        if contract_id is not None:
+            stmt = stmt.where(MeasurementModel.contract_id == contract_id)
+        if state is not None:
+            stmt = stmt.where(MeasurementModel.state == state.value)
+        result = await self._session.execute(stmt)
+        return [_to_measurement_entity(m) for m in result.scalars().all()]
+
     async def update(self, measurement: Measurement) -> None:
         """Update existing measurement and sync entries.
 

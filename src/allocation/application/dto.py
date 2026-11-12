@@ -77,3 +77,20 @@ class ApproveMeasurementCommand:
     """Command payload to approve a measurement."""
 
     measurement_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class ListContractsQuery:
+    """Query parameters to filter contracts."""
+
+    supplier_id: UUID | None = None
+    active_only: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class ListMeasurementsQuery:
+    """Query parameters to filter measurements."""
+
+    period: str | None = None
+    contract_id: UUID | None = None
+    state: str | None = None

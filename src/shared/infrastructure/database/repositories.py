@@ -234,6 +234,17 @@ class SessionManagedMeasurementRepository(MeasurementRepository):
             repo = SqlAlchemyMeasurementRepository(session)
             return await repo.list_by_contract(contract_id)
 
+    async def find(
+        self,
+        period: Period | None = None,
+        contract_id: UUID | None = None,
+        state: MeasurementState | None = None,
+    ) -> list[Measurement]:
+        """Find measurements matching optional criteria."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyMeasurementRepository(session)
+            return await repo.find(period=period, contract_id=contract_id, state=state)
+
     async def update(self, measurement: Measurement) -> None:
         """Update measurement and commit transaction."""
         async with self._session_factory() as session:

@@ -255,3 +255,77 @@ async def test_should_update_measurement_state_and_entries(
     assert updated is not None
     assert updated.state == MeasurementState.APPROVED
     assert len(updated.entries) == 1
+
+
+@pytest.mark.asyncio
+async def test_should_find_measurements_by_multi_criteria(
+    db_session: AsyncSession,
+) -> None:
+    """Verify querying measurements with combinations of period, contract, and state."""
+    sup_repo = SqlAlchemySupplierRepository(db_session)
+    contract_repo = SqlAlchemyContractRepository(db_session)
+    measurement_repo = SqlAlchemyMeasurementRepository(db_session)
+
+    supplier = Supplier(name="Telecom Corp", tax_id="88.999.000/0001-11")
+    await sup_repo.add(supplier)
+
+    contract = Contract(
+        code="CT-2026-FIND-MEAS",
+        supplier_id=supplier.id,
+        title="Telecom Data Links",
+    )
+    await contract_repo.add(contract)
+
+    cc_id = uuid4()
+    m1 = Measurement(
+        contract_id=contract.id,
+        period=Period.from_string("2026-08"),
+        description="August data",
+        gross_amount=Money(Decimal("3000.00")),
+    )
+    m1.set_entries(
+        [
+            AllocationEntry(
+                cost_center_id=cc_id,
+                amount=Money(Decimal("3000.00")),
+                percentage=Percentage(Decimal("100.00")),
+            )
+        ]
+    )
+    m1.submit()
+    m1.approve()
+    await measurement_repo.add(m1)
+
+    m2 = Measurement(
+        contract_id=contract.id,
+        period=Period.from_string("2026-08"),
+        description="August voice",
+        gross_amount=Money(Decimal("1000.00")),
+    )
+    m2.set_entries(
+        [
+            AllocationEntry(
+                cost_center_id=cc_id,
+                amount=Money(Decimal("1000.00")),
+                percentage=Percentage(Decimal("100.00")),
+            )
+        ]
+    )
+    m2.submit()
+    await measurement_repo.add(m2)
+
+    # Filter by period and state
+    approved_august = await measurement_repo.find(
+        period=Period.from_string("2026-08"),
+        contract_id=contract.id,
+        state=MeasurementState.APPROVED,
+    )
+    assert len(approved_august) == 1
+    assert approved_august[0].id == m1.id
+
+    # Filter by period only
+    all_august = await measurement_repo.find(
+        period=Period.from_string("2026-08"),
+        contract_id=contract.id,
+    )
+    assert len(all_august) == 2

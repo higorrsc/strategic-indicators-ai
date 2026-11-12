@@ -134,3 +134,103 @@ async def test_should_reject_measurement_allocation_exceeding_100_percent(
     )
     # Pydantic validates le=100 on AllocationShareSchema
     assert resp_m.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_should_list_contracts_and_measurements_with_filters(
+    client: AsyncClient,
+) -> None:
+    """Verify listing contracts and measurements with query filtering."""
+    # 1. Setup cost center
+    resp_cc = await client.post(
+        "/api/v1/cost-centers",
+        json={"code": "3.1", "name": "Marketing Operations", "parent_id": None},
+    )
+    cc_id = resp_cc.json()["id"]
+
+    # 2. Setup supplier
+    supplier_id = uuid4()
+    container = get_container()
+    await container.supplier_repo.add(
+        Supplier(
+            id=supplier_id,
+            name="Ad Agency Media",
+            tax_id="55.666.777/0001-88",
+        )
+    )
+
+    # 3. Create active contract
+    resp_c = await client.post(
+        "/api/v1/contracts",
+        json={
+            "code": "CT-MKT-LIST-01",
+            "supplier_id": str(supplier_id),
+            "title": "Social Campaigns",
+            "default_allocations": [{"cost_center_id": cc_id, "percentage": "100.00"}],
+        },
+    )
+    assert resp_c.status_code == 201
+    contract_id = resp_c.json()["id"]
+
+    # 4. List contracts
+    resp_list_c = await client.get("/api/v1/contracts")
+    assert resp_list_c.status_code == 200
+    contracts = resp_list_c.json()
+    assert any(c["id"] == contract_id for c in contracts)
+
+    # Filter contracts by supplier
+    resp_sup_c = await client.get(f"/api/v1/contracts?supplier_id={supplier_id}")
+    assert resp_sup_c.status_code == 200
+    sup_contracts = resp_sup_c.json()
+    assert all(c["supplier_id"] == str(supplier_id) for c in sup_contracts)
+
+    # 5. Submit measurements across periods
+    resp_m1 = await client.post(
+        "/api/v1/measurements",
+        json={
+            "contract_id": contract_id,
+            "period": "2026-04",
+            "description": "April Campaign",
+            "gross_amount": "8000.00",
+            "currency": "USD",
+        },
+    )
+    assert resp_m1.status_code == 201
+    m1_id = resp_m1.json()["id"]
+
+    resp_m2 = await client.post(
+        "/api/v1/measurements",
+        json={
+            "contract_id": contract_id,
+            "period": "2026-05",
+            "description": "May Campaign",
+            "gross_amount": "12000.00",
+            "currency": "USD",
+        },
+    )
+    assert resp_m2.status_code == 201
+    m2_id = resp_m2.json()["id"]
+
+    # Approve m1
+    await client.post(f"/api/v1/measurements/{m1_id}/approve")
+
+    # 6. List measurements by period
+    resp_m_apr = await client.get("/api/v1/measurements?period=2026-04")
+    assert resp_m_apr.status_code == 200
+    apr_data = resp_m_apr.json()
+    assert any(m["id"] == m1_id for m in apr_data)
+    assert not any(m["id"] == m2_id for m in apr_data)
+
+    # List measurements by state
+    resp_approved = await client.get(
+        f"/api/v1/measurements?contract_id={contract_id}&state=APPROVED"
+    )
+    assert resp_approved.status_code == 200
+    approved_data = resp_approved.json()
+    assert len(approved_data) == 1
+    assert approved_data[0]["id"] == m1_id
+
+    # List measurements for non-existent period
+    resp_empty = await client.get("/api/v1/measurements?period=2029-12")
+    assert resp_empty.status_code == 200
+    assert resp_empty.json() == []

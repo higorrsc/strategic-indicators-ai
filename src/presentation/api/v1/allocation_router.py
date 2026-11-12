@@ -5,11 +5,13 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Path, status
+from fastapi import APIRouter, Path, Query, status
 
 from src.allocation.application.dto import (
     AllocationShareDTO,
     ApproveMeasurementCommand,
+    ListContractsQuery,
+    ListMeasurementsQuery,
     RegisterContractCommand,
     SubmitMeasurementCommand,
 )
@@ -20,6 +22,8 @@ from src.allocation.domain.exceptions import (
 from src.presentation.dependencies import (
     ApproveMeasurementUseCaseDep,
     ContractRepoDep,
+    ListContractsUseCaseDep,
+    ListMeasurementsUseCaseDep,
     MeasurementRepoDep,
     RegisterContractUseCaseDep,
     SubmitMeasurementUseCaseDep,
@@ -82,6 +86,52 @@ async def register_contract(
         ],
         is_active=result.is_active,
     )
+
+
+@router.get(
+    "/contracts",
+    response_model=list[ContractResponse],
+    summary="List vendor contracts",
+)
+async def list_contracts(
+    use_case: ListContractsUseCaseDep,
+    active_only: Annotated[
+        bool, Query(description="Filter active contracts only")
+    ] = True,
+    supplier_id: Annotated[
+        UUID | None, Query(description="Optional supplier UUID filter")
+    ] = None,
+) -> list[ContractResponse]:
+    """Query vendor contracts with optional filtering.
+
+    Args:
+        use_case: ListContractsUseCase dependency.
+        active_only: Whether to return only active contracts.
+        supplier_id: Optional supplier UUID filter.
+
+    Returns:
+        list[ContractResponse]: List of matching contracts.
+    """
+    contracts = await use_case.execute(
+        ListContractsQuery(supplier_id=supplier_id, active_only=active_only)
+    )
+    return [
+        ContractResponse(
+            id=c.id,
+            code=c.code,
+            supplier_id=c.supplier_id,
+            title=c.title,
+            default_allocations=[
+                AllocationShareSchema(
+                    cost_center_id=a.cost_center_id,
+                    percentage=a.percentage,
+                )
+                for a in c.default_allocations
+            ],
+            is_active=c.is_active,
+        )
+        for c in contracts
+    ]
 
 
 @router.get(
@@ -270,3 +320,67 @@ async def get_measurement(
             for e in measurement.entries
         ],
     )
+
+
+@router.get(
+    "/measurements",
+    response_model=list[MeasurementResponse],
+    summary="List financial measurements",
+)
+async def list_measurements(
+    use_case: ListMeasurementsUseCaseDep,
+    period: Annotated[
+        str | None,
+        Query(
+            description="Optional fiscal period filter (YYYY-MM)",
+            pattern=r"^\d{4}-(0[1-9]|1[0-2])$",
+        ),
+    ] = None,
+    contract_id: Annotated[
+        UUID | None, Query(description="Optional contract UUID filter")
+    ] = None,
+    state: Annotated[
+        str | None,
+        Query(
+            description=(
+                "Optional measurement state filter "
+                "(DRAFT, SUBMITTED, APPROVED, CANCELLED)"
+            )
+        ),
+    ] = None,
+) -> list[MeasurementResponse]:
+    """Query financial measurements with multi-criteria filtering.
+
+    Args:
+        use_case: ListMeasurementsUseCase dependency.
+        period: Optional fiscal period filter.
+        contract_id: Optional contract UUID filter.
+        state: Optional measurement lifecycle state filter.
+
+    Returns:
+        list[MeasurementResponse]: List of matching measurements.
+    """
+    measurements = await use_case.execute(
+        ListMeasurementsQuery(period=period, contract_id=contract_id, state=state)
+    )
+    return [
+        MeasurementResponse(
+            id=m.id,
+            contract_id=m.contract_id,
+            period=m.period,
+            description=m.description,
+            gross_amount=m.gross_amount,
+            currency=m.currency,
+            state=m.state,
+            entries=[
+                AllocationEntryResponse(
+                    cost_center_id=e.cost_center_id,
+                    percentage=e.percentage,
+                    amount=e.amount,
+                    currency=e.currency,
+                )
+                for e in m.entries
+            ],
+        )
+        for m in measurements
+    ]

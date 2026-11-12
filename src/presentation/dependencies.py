@@ -15,6 +15,12 @@ from sqlalchemy.ext.asyncio import (
 from src.allocation.application.use_cases.approve_measurement import (
     ApproveMeasurementUseCase,
 )
+from src.allocation.application.use_cases.list_contracts import (
+    ListContractsUseCase,
+)
+from src.allocation.application.use_cases.list_measurements import (
+    ListMeasurementsUseCase,
+)
 from src.allocation.application.use_cases.register_contract import (
     RegisterContractUseCase,
 )
@@ -394,6 +400,36 @@ def get_approve_measurement_use_case(
     )
 
 
+def get_list_contracts_use_case(
+    contract_repo: Annotated[ContractRepository, Depends(get_contract_repository)],
+) -> ListContractsUseCase:
+    """Provide ListContractsUseCase.
+
+    Args:
+        contract_repo: Injected contract repository.
+
+    Returns:
+        ListContractsUseCase: Instantiated use case.
+    """
+    return ListContractsUseCase(contract_repository=contract_repo)
+
+
+def get_list_measurements_use_case(
+    measurement_repo: Annotated[
+        MeasurementRepository, Depends(get_measurement_repository)
+    ],
+) -> ListMeasurementsUseCase:
+    """Provide ListMeasurementsUseCase.
+
+    Args:
+        measurement_repo: Injected measurement repository.
+
+    Returns:
+        ListMeasurementsUseCase: Instantiated use case.
+    """
+    return ListMeasurementsUseCase(measurement_repository=measurement_repo)
+
+
 def get_compute_period_indicators_use_case(
     cc_repo: Annotated[CostCenterRepository, Depends(get_cost_center_repository)],
     budget_repo: Annotated[BudgetRepository, Depends(get_budget_repository)],
@@ -516,6 +552,12 @@ SubmitMeasurementUseCaseDep = Annotated[
 ]
 ApproveMeasurementUseCaseDep = Annotated[
     ApproveMeasurementUseCase, Depends(get_approve_measurement_use_case)
+]
+ListContractsUseCaseDep = Annotated[
+    ListContractsUseCase, Depends(get_list_contracts_use_case)
+]
+ListMeasurementsUseCaseDep = Annotated[
+    ListMeasurementsUseCase, Depends(get_list_measurements_use_case)
 ]
 ComputePeriodIndicatorsUseCaseDep = Annotated[
     ComputePeriodIndicatorsUseCase,

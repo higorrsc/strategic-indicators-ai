@@ -6,16 +6,21 @@ import pytest
 from src.allocation.application.dto import (
     AllocationShareDTO,
     ApproveMeasurementCommand,
+    ListContractsQuery,
+    ListMeasurementsQuery,
     RegisterContractCommand,
     SubmitMeasurementCommand,
 )
 from src.allocation.application.use_cases import (
     ApproveMeasurementUseCase,
+    ListContractsUseCase,
+    ListMeasurementsUseCase,
     RegisterContractUseCase,
     SubmitMeasurementUseCase,
 )
 from src.allocation.domain.entities.contract import AllocationShare, Contract
 from src.allocation.domain.entities.measurement import (
+    AllocationEntry,
     Measurement,
     MeasurementState,
 )
@@ -152,3 +157,135 @@ class TestAllocationUseCases:
             ApproveMeasurementCommand(measurement_id=measurement_dto.id)
         )
         assert approved_dto.state == "APPROVED"
+
+
+class TestInMemoryMeasurementRepositoryFind:
+    @pytest.mark.asyncio
+    async def test_should_filter_measurements_by_criteria(self) -> None:
+        repo = InMemoryMeasurementRepository()
+        ct1, ct2 = uuid4(), uuid4()
+        cc_id = uuid4()
+
+        m1 = Measurement(
+            contract_id=ct1,
+            period=Period(2026, 4),
+            description="M1",
+            gross_amount=Money(Decimal("100.00")),
+        )
+        m1.set_entries(
+            [
+                AllocationEntry(
+                    cost_center_id=cc_id,
+                    amount=Money(Decimal("100.00")),
+                    percentage=Percentage(Decimal("100.00")),
+                )
+            ]
+        )
+        m1.submit()
+        m1.approve()
+        await repo.add(m1)
+
+        m2 = Measurement(
+            contract_id=ct1,
+            period=Period(2026, 4),
+            description="M2",
+            gross_amount=Money(Decimal("200.00")),
+        )
+        m2.set_entries(
+            [
+                AllocationEntry(
+                    cost_center_id=cc_id,
+                    amount=Money(Decimal("200.00")),
+                    percentage=Percentage(Decimal("100.00")),
+                )
+            ]
+        )
+        m2.submit()
+        await repo.add(m2)
+
+        m3 = Measurement(
+            contract_id=ct2,
+            period=Period(2026, 5),
+            description="M3",
+            gross_amount=Money(Decimal("300.00")),
+        )
+        await repo.add(m3)
+
+        assert len(await repo.find(period=Period(2026, 4))) == 2
+        assert (
+            len(await repo.find(contract_id=ct1, state=MeasurementState.APPROVED)) == 1
+        )
+        assert len(await repo.find(period=Period(2026, 5))) == 1
+        assert len(await repo.find(contract_id=uuid4())) == 0
+
+
+class TestListContractsUseCase:
+    @pytest.mark.asyncio
+    async def test_should_list_contracts_with_filters(self) -> None:
+        repo = InMemoryContractRepository()
+        sup1, sup2 = uuid4(), uuid4()
+
+        c1 = Contract(
+            code="CT-01", supplier_id=sup1, title="Active Sup1", is_active=True
+        )
+        c2 = Contract(
+            code="CT-02", supplier_id=sup1, title="Inactive Sup1", is_active=False
+        )
+        c3 = Contract(
+            code="CT-03", supplier_id=sup2, title="Active Sup2", is_active=True
+        )
+        await repo.add(c1)
+        await repo.add(c2)
+        await repo.add(c3)
+
+        use_case = ListContractsUseCase(repo)
+
+        # Default: active only
+        active = await use_case.execute()
+        assert len(active) == 2
+
+        # All contracts
+        all_contracts = await use_case.execute(ListContractsQuery(active_only=False))
+        assert len(all_contracts) == 3
+
+        # Filter by supplier
+        sup1_active = await use_case.execute(
+            ListContractsQuery(supplier_id=sup1, active_only=True)
+        )
+        assert len(sup1_active) == 1
+        assert sup1_active[0].code == "CT-01"
+
+
+class TestListMeasurementsUseCase:
+    @pytest.mark.asyncio
+    async def test_should_list_measurements_with_filters(self) -> None:
+        repo = InMemoryMeasurementRepository()
+        ct1 = uuid4()
+        cc_id = uuid4()
+
+        m1 = Measurement(
+            contract_id=ct1,
+            period=Period(2026, 3),
+            description="March Bill",
+            gross_amount=Money(Decimal("1000.00")),
+        )
+        m1.set_entries(
+            [
+                AllocationEntry(
+                    cost_center_id=cc_id,
+                    amount=Money(Decimal("1000.00")),
+                    percentage=Percentage(Decimal("100.00")),
+                )
+            ]
+        )
+        m1.submit()
+        m1.approve()
+        await repo.add(m1)
+
+        use_case = ListMeasurementsUseCase(repo)
+
+        res = await use_case.execute(ListMeasurementsQuery(period="2026-03"))
+        assert len(res) == 1
+        assert res[0].description == "March Bill"
+        assert res[0].state == "APPROVED"
+        assert len(res[0].entries) == 1
