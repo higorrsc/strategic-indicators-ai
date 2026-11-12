@@ -15,9 +15,9 @@
 
 ## 3. Cost Allocation Context Persistence (Phase 2)
 
-- [ ] 3.1 Implement SQLAlchemy ORM models (`SupplierModel`, `ContractModel`, `ContractAllocationModel`, `MeasurementModel`, `AllocationEntryModel`) in `src/allocation/infrastructure/database/models.py`
-- [ ] 3.2 Implement `SqlAlchemySupplierRepository`, `SqlAlchemyContractRepository`, and `SqlAlchemyMeasurementRepository` in `src/allocation/infrastructure/repositories/`
-- [ ] 3.3 Write integration tests for Allocation database repositories using async in-memory SQLite in `tests/integration/database/test_allocation_persistence.py` and verify tests pass
+- [x] 3.1 Implement SQLAlchemy ORM models (`SupplierModel`, `ContractModel`, `ContractAllocationModel`, `MeasurementModel`, `AllocationEntryModel`) in `src/allocation/infrastructure/database/models.py`
+- [x] 3.2 Implement `SqlAlchemySupplierRepository`, `SqlAlchemyContractRepository`, and `SqlAlchemyMeasurementRepository` in `src/allocation/infrastructure/repositories/`
+- [x] 3.3 Write integration tests for Allocation database repositories using async in-memory SQLite in `tests/integration/database/test_allocation_persistence.py` and verify tests pass
 
 ## 4. Alembic Migrations & Schema Generation
 
