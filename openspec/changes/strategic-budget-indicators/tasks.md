@@ -29,11 +29,11 @@
 
 ## 5. Strategic Intelligence Context (Multi-Provider AI & Anomaly Detection)
 
-- [ ] 5.1 Implement `AllocationAnomalyDetector` domain service with abrupt shift and budget dumping heuristics in `src/intelligence/domain/services/anomaly_detector.py` and verify with unit tests
-- [ ] 5.2 Define `AIPort` protocol with typed schemas (`ExecutiveSummaryResponse`, `ScenarioEvaluationResponse`) in `src/intelligence/application/ports/ai_port.py`
-- [ ] 5.3 Implement `FakeAIPort` for deterministic local testing in `src/intelligence/infrastructure/fake_ai_adapter.py` and verify with test suite
-- [ ] 5.4 Implement `PydanticAIAdapter` supporting local Ollama (`http://localhost:11434/v1`), Google Gemini, and OpenAI backends in `src/intelligence/infrastructure/pydantic_ai_adapter.py`
-- [ ] 5.5 Implement use cases (`GenerateExecutiveSummaryUseCase`, `AnalyzeAllocationAnomaliesUseCase`) in `src/intelligence/application/use_cases/` and verify with unit tests
+- [x] 5.1 Implement `AllocationAnomalyDetector` domain service with abrupt shift and budget dumping heuristics in `src/intelligence/domain/services/anomaly_detector.py` and verify with unit tests
+- [x] 5.2 Define `AIPort` protocol with typed schemas (`ExecutiveSummaryResponse`, `ScenarioEvaluationResponse`) in `src/intelligence/application/ports/ai_port.py`
+- [x] 5.3 Implement `FakeAIPort` for deterministic local testing in `src/intelligence/infrastructure/fake_ai_adapter.py` and verify with test suite
+- [x] 5.4 Implement `PydanticAIAdapter` supporting local Ollama (`http://localhost:11434/v1`), Google Gemini, and OpenAI backends in `src/intelligence/infrastructure/pydantic_ai_adapter.py`
+- [x] 5.5 Implement use cases (`GenerateExecutiveSummaryUseCase`, `AnalyzeAllocationAnomaliesUseCase`) in `src/intelligence/application/use_cases/` and verify with unit tests
 
 ## 6. Presentation Layer & OpenAPI Contracts
 
