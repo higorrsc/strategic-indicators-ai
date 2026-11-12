@@ -1,6 +1,8 @@
 {
   "cSpell.language": "en,pt-BR",
-  "cSpell.words": [],
+  "cSpell.words": [
+    "ollama"
+  ],
   // ----------------------------
   // DOCKER
   // ----------------------------
@@ -143,5 +145,6 @@
     "**/.pytest_cache": true,
     "**/.ruff_cache": true,
     "**/.venv": true
-  }
+  },
+  "python-envs.defaultEnvManager": "ms-python.python:system"
 }

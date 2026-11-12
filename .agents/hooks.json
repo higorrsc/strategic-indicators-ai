@@ -1,0 +1,152 @@
+{
+  "alembic-migration-check": {
+    "SessionStart": null,
+    "PreInvocation": null,
+    "PostInvocation": null,
+    "Stop": null,
+    "PreToolUse": [
+      {
+        "matcher": "run_command|bash|execute_terminal",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/check-alembic.sh",
+            "prompt": "",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": null
+  },
+  "block-dangerous-commands": {
+    "SessionStart": null,
+    "PreInvocation": null,
+    "PostInvocation": null,
+    "Stop": null,
+    "PreToolUse": [
+      {
+        "matcher": "run_command|bash|execute_terminal",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/block-dangerous-commands.sh",
+            "prompt": "",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": null
+  },
+  "commit-quality-gate": {
+    "SessionStart": null,
+    "PreInvocation": null,
+    "PostInvocation": null,
+    "Stop": null,
+    "PreToolUse": [
+      {
+        "matcher": "run_command|bash|execute_terminal",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/pre-commit-check.sh",
+            "prompt": "",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PostToolUse": null
+  },
+  "database-change-warning": {
+    "SessionStart": null,
+    "PreInvocation": null,
+    "PostInvocation": null,
+    "Stop": null,
+    "PreToolUse": null,
+    "PostToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/check-database-changes.sh",
+            "prompt": "",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "debug-environment": {
+    "SessionStart": null,
+    "PreInvocation": null,
+    "PostInvocation": null,
+    "Stop": null,
+    "PreToolUse": [
+      {
+        "matcher": "run_command|bash|execute_terminal",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/debug-env.sh",
+            "prompt": "",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": null
+  },
+  "final-validation": {
+    "SessionStart": null,
+    "PreInvocation": null,
+    "PostInvocation": null,
+    "Stop": [
+      {
+        "type": "command",
+        "command": "./hooks/final-check.sh",
+        "prompt": "",
+        "timeout": 30
+      }
+    ],
+    "PreToolUse": null,
+    "PostToolUse": null
+  },
+  "project-context-reminder": {
+    "SessionStart": null,
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "echo 'Remember: use available skills. Follow Git Flow, Conventional Commits with Gitmojis, English-only Git messages, and project quality gates.'",
+        "prompt": "",
+        "timeout": 0
+      }
+    ],
+    "PostInvocation": null,
+    "Stop": null,
+    "PreToolUse": null,
+    "PostToolUse": null
+  },
+  "python-format-on-edit": {
+    "SessionStart": null,
+    "PreInvocation": null,
+    "PostInvocation": null,
+    "Stop": null,
+    "PreToolUse": null,
+    "PostToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hooks/python-format.sh",
+            "prompt": "",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
