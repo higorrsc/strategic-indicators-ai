@@ -14,6 +14,11 @@ from src.allocation.domain.entities.measurement import (
     MeasurementState,
 )
 from src.allocation.domain.entities.supplier import Supplier
+from src.allocation.domain.exceptions import (
+    AllocationDomainError,
+    ContractNotFoundError,
+    MeasurementNotFoundError,
+)
 from src.allocation.domain.repositories.contract_repository import (
     ContractRepository,
 )
@@ -150,6 +155,12 @@ class SqlAlchemyContractRepository(ContractRepository):
         Args:
             contract: Contract entity to add.
         """
+        existing = await self.get_by_code(contract.code)
+        if existing is not None:
+            raise AllocationDomainError(
+                f"Contract with code '{contract.code}' already exists."
+            )
+
         model = ContractModel(
             id=contract.id,
             code=contract.code,
@@ -221,10 +232,11 @@ class SqlAlchemyContractRepository(ContractRepository):
         stmt = select(ContractModel).where(ContractModel.id == contract.id)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
-        if model is not None:
-            model.title = contract.title
-            model.is_active = contract.is_active
-            await self._session.flush()
+        if model is None:
+            raise ContractNotFoundError(f"Contract ID {contract.id} does not exist.")
+        model.title = contract.title
+        model.is_active = contract.is_active
+        await self._session.flush()
 
 
 class SqlAlchemyMeasurementRepository(MeasurementRepository):
@@ -323,24 +335,27 @@ class SqlAlchemyMeasurementRepository(MeasurementRepository):
         stmt = select(MeasurementModel).where(MeasurementModel.id == measurement.id)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
-        if model is not None:
-            model.state = measurement.state.value
-            model.description = measurement.description
-            model.gross_amount = measurement.gross_amount.amount
-            model.currency = measurement.gross_amount.currency
-            model.period = measurement.period.value
+        if model is None:
+            raise MeasurementNotFoundError(
+                f"Measurement ID {measurement.id} does not exist."
+            )
+        model.state = measurement.state.value
+        model.description = measurement.description
+        model.gross_amount = measurement.gross_amount.amount
+        model.currency = measurement.gross_amount.currency
+        model.period = measurement.period.value
 
-            # Sync entries
-            model.entries.clear()
-            for entry in measurement.entries:
-                model.entries.append(
-                    AllocationEntryModel(
-                        id=entry.id,
-                        measurement_id=measurement.id,
-                        cost_center_id=entry.cost_center_id,
-                        amount=entry.amount.amount,
-                        currency=entry.amount.currency,
-                        percentage=entry.percentage.value,
-                    )
+        # Sync entries
+        model.entries.clear()
+        for entry in measurement.entries:
+            model.entries.append(
+                AllocationEntryModel(
+                    id=entry.id,
+                    measurement_id=measurement.id,
+                    cost_center_id=entry.cost_center_id,
+                    amount=entry.amount.amount,
+                    currency=entry.amount.currency,
+                    percentage=entry.percentage.value,
                 )
-            await self._session.flush()
+            )
+        await self._session.flush()

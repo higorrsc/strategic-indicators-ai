@@ -26,9 +26,9 @@
 
 ## 5. Dependency Injection Wiring & Test Suite Adaptation
 
-- [ ] 5.1 Update composition root in `src/presentation/dependencies.py` to instantiate and inject asynchronous database repositories
-- [ ] 5.2 Adapt test fixtures in `tests/conftest.py`, `tests/api/conftest.py`, and `tests/bdd/conftest.py` to run seamlessly against async in-memory SQLite with schema setup
-- [ ] 5.3 Execute complete test suite (`uv run pytest`) and verify all unit, API, and BDD tests pass against SQLite in-memory
+- [x] 5.1 Update composition root in `src/presentation/dependencies.py` to instantiate and inject asynchronous database repositories
+- [x] 5.2 Adapt test fixtures in `tests/conftest.py`, `tests/api/conftest.py`, and `tests/bdd/conftest.py` to run seamlessly against async in-memory SQLite with schema setup
+- [x] 5.3 Execute complete test suite (`uv run pytest`) and verify all unit, API, and BDD tests pass against SQLite in-memory
 
 ## 6. Containerization with Docker Compose & PostgreSQL
 

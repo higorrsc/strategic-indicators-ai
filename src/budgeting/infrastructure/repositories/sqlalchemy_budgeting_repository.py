@@ -9,6 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.budgeting.domain.entities.budget_target import BudgetTarget
 from src.budgeting.domain.entities.cost_center import CostCenter
+from src.budgeting.domain.exceptions import (
+    CircularCostCenterHierarchyError,
+    CostCenterNotFoundError,
+    DuplicateCostCenterCodeError,
+)
 from src.budgeting.domain.repositories.budget_repository import BudgetRepository
 from src.budgeting.domain.repositories.cost_center_repository import (
     CostCenterRepository,
@@ -59,6 +64,18 @@ class SqlAlchemyCostCenterRepository(CostCenterRepository):
         Args:
             cost_center: Cost center entity to persist.
         """
+        existing = await self.get_by_code(cost_center.code)
+        if existing is not None:
+            raise DuplicateCostCenterCodeError(
+                f"Cost center code '{cost_center.code}' already exists."
+            )
+        if cost_center.parent_id is not None:
+            parent = await self.get_by_id(cost_center.parent_id)
+            if parent is None:
+                raise CostCenterNotFoundError(
+                    f"Parent cost center ID {cost_center.parent_id} does not exist."
+                )
+
         model = CostCenterModel(
             id=cost_center.id,
             code=cost_center.code.value,
@@ -160,12 +177,22 @@ class SqlAlchemyCostCenterRepository(CostCenterRepository):
         stmt = select(CostCenterModel).where(CostCenterModel.id == cost_center.id)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
-        if model is not None:
-            model.code = cost_center.code.value
-            model.name = cost_center.name
-            model.parent_id = cost_center.parent_id
-            model.is_active = cost_center.is_active
-            await self._session.flush()
+        if model is None:
+            raise CostCenterNotFoundError(
+                f"Cost center ID {cost_center.id} does not exist."
+            )
+        if cost_center.parent_id is not None:
+            descendants = await self.get_descendants(cost_center.id)
+            descendant_ids = {d.id for d in descendants}
+            if cost_center.parent_id in descendant_ids:
+                raise CircularCostCenterHierarchyError(
+                    "Cannot assign descendant as parent cost center."
+                )
+        model.code = cost_center.code.value
+        model.name = cost_center.name
+        model.parent_id = cost_center.parent_id
+        model.is_active = cost_center.is_active
+        await self._session.flush()
 
 
 class SqlAlchemyBudgetRepository(BudgetRepository):

@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+)
 
 from src.allocation.application.use_cases.approve_measurement import (
     ApproveMeasurementUseCase,
@@ -20,10 +26,13 @@ from src.allocation.domain.repositories.measurement_repository import (
     MeasurementRepository,
 )
 from src.allocation.domain.repositories.supplier_repository import SupplierRepository
-from src.allocation.infrastructure.repositories.in_memory_allocation_repository import (
+from src.allocation.infrastructure.repositories import (
     InMemoryContractRepository,
     InMemoryMeasurementRepository,
     InMemorySupplierRepository,
+    SqlAlchemyContractRepository,
+    SqlAlchemyMeasurementRepository,
+    SqlAlchemySupplierRepository,
 )
 from src.budgeting.application.use_cases.create_cost_center import (
     CreateCostCenterUseCase,
@@ -38,9 +47,11 @@ from src.budgeting.domain.repositories.budget_repository import BudgetRepository
 from src.budgeting.domain.repositories.cost_center_repository import (
     CostCenterRepository,
 )
-from src.budgeting.infrastructure.repositories.in_memory_budgeting_repository import (
+from src.budgeting.infrastructure.repositories import (
     InMemoryBudgetRepository,
     InMemoryCostCenterRepository,
+    SqlAlchemyBudgetRepository,
+    SqlAlchemyCostCenterRepository,
 )
 from src.indicators.application.use_cases.compute_period_indicators import (
     ComputePeriodIndicatorsUseCase,
@@ -57,14 +68,29 @@ from src.intelligence.application.use_cases.generate_executive_summary import (
 )
 from src.intelligence.infrastructure.pydantic_ai_adapter import PydanticAIAdapter
 from src.shared.config.settings import Settings, get_settings
+from src.shared.infrastructure.database.repositories import (
+    SessionManagedBudgetRepository,
+    SessionManagedContractRepository,
+    SessionManagedCostCenterRepository,
+    SessionManagedMeasurementRepository,
+    SessionManagedSupplierRepository,
+)
+from src.shared.infrastructure.database.session import (
+    create_database_engine,
+    create_session_factory,
+)
 
 
 class DependencyContainer:
-    """Singleton container maintaining shared repository state in memory."""
+    """Singleton container maintaining shared repository state in memory or database."""
 
     def __init__(self) -> None:
         """Initialize empty container with default in-memory implementations."""
         self.settings: Settings = get_settings()
+        self.engine: AsyncEngine | None = None
+        self.session_factory: async_sessionmaker[AsyncSession] | None = None
+        self.use_database: bool = False
+
         self.cost_center_repo: CostCenterRepository = InMemoryCostCenterRepository()
         self.budget_repo: BudgetRepository = InMemoryBudgetRepository()
         self.supplier_repo: SupplierRepository = InMemorySupplierRepository()
@@ -72,13 +98,45 @@ class DependencyContainer:
         self.measurement_repo: MeasurementRepository = InMemoryMeasurementRepository()
         self.ai_port: AIPort = PydanticAIAdapter(settings=self.settings)
 
+    async def init_database(
+        self, database_url: str | None = None, echo: bool = False
+    ) -> None:
+        """Initialize asynchronous database engine and session-managed repositories.
+
+        Args:
+            database_url: Database connection URL, defaults to settings.
+            echo: Whether to log generated SQL statements.
+        """
+        url = database_url or self.settings.DATABASE_URL
+        self.engine = create_database_engine(url, echo=echo)
+        self.session_factory = create_session_factory(self.engine)
+        self.use_database = True
+
+        self.cost_center_repo = SessionManagedCostCenterRepository(self.session_factory)
+        self.budget_repo = SessionManagedBudgetRepository(self.session_factory)
+        self.supplier_repo = SessionManagedSupplierRepository(self.session_factory)
+        self.contract_repo = SessionManagedContractRepository(self.session_factory)
+        self.measurement_repo = SessionManagedMeasurementRepository(
+            self.session_factory
+        )
+        self.ai_port = PydanticAIAdapter(settings=self.settings)
+
+    async def close_database(self) -> None:
+        """Dispose of the database engine and clean up connection pools."""
+        if self.engine is not None:
+            await self.engine.dispose()
+            self.engine = None
+            self.session_factory = None
+            self.use_database = False
+
     def reset(self) -> None:
         """Reset repository stores for testing isolation."""
-        self.cost_center_repo = InMemoryCostCenterRepository()
-        self.budget_repo = InMemoryBudgetRepository()
-        self.supplier_repo = InMemorySupplierRepository()
-        self.contract_repo = InMemoryContractRepository()
-        self.measurement_repo = InMemoryMeasurementRepository()
+        if not self.use_database:
+            self.cost_center_repo = InMemoryCostCenterRepository()
+            self.budget_repo = InMemoryBudgetRepository()
+            self.supplier_repo = InMemorySupplierRepository()
+            self.contract_repo = InMemoryContractRepository()
+            self.measurement_repo = InMemoryMeasurementRepository()
         self.ai_port = PydanticAIAdapter(settings=self.settings)
 
 
@@ -94,76 +152,118 @@ def get_container() -> DependencyContainer:
     return _container
 
 
+# --- Session Provider ---
+
+
+async def get_db_session() -> AsyncGenerator[AsyncSession | None]:
+    """Yield an active asynchronous database session per request if configured.
+
+    Yields:
+        AsyncSession | None: Active session or None when using in-memory mode.
+    """
+    container = get_container()
+    if container.use_database and container.session_factory is not None:
+        async with container.session_factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+    else:
+        yield None
+
+
 # --- Repository Providers ---
 
 
 def get_cost_center_repository(
     container: Annotated[DependencyContainer, Depends(get_container)],
+    session: Annotated[AsyncSession | None, Depends(get_db_session)] = None,
 ) -> CostCenterRepository:
     """Provide cost center repository.
 
     Args:
         container: Dependency container.
+        session: Optional active request session.
 
     Returns:
         CostCenterRepository: Cost center repository.
     """
+    if container.use_database and session is not None:
+        return SqlAlchemyCostCenterRepository(session)
     return container.cost_center_repo
 
 
 def get_budget_repository(
     container: Annotated[DependencyContainer, Depends(get_container)],
+    session: Annotated[AsyncSession | None, Depends(get_db_session)] = None,
 ) -> BudgetRepository:
     """Provide budget target repository.
 
     Args:
         container: Dependency container.
+        session: Optional active request session.
 
     Returns:
         BudgetRepository: Budget target repository.
     """
+    if container.use_database and session is not None:
+        return SqlAlchemyBudgetRepository(session)
     return container.budget_repo
 
 
 def get_supplier_repository(
     container: Annotated[DependencyContainer, Depends(get_container)],
+    session: Annotated[AsyncSession | None, Depends(get_db_session)] = None,
 ) -> SupplierRepository:
     """Provide supplier repository.
 
     Args:
         container: Dependency container.
+        session: Optional active request session.
 
     Returns:
         SupplierRepository: Supplier repository.
     """
+    if container.use_database and session is not None:
+        return SqlAlchemySupplierRepository(session)
     return container.supplier_repo
 
 
 def get_contract_repository(
     container: Annotated[DependencyContainer, Depends(get_container)],
+    session: Annotated[AsyncSession | None, Depends(get_db_session)] = None,
 ) -> ContractRepository:
     """Provide contract repository.
 
     Args:
         container: Dependency container.
+        session: Optional active request session.
 
     Returns:
         ContractRepository: Contract repository.
     """
+    if container.use_database and session is not None:
+        return SqlAlchemyContractRepository(session)
     return container.contract_repo
 
 
 def get_measurement_repository(
     container: Annotated[DependencyContainer, Depends(get_container)],
+    session: Annotated[AsyncSession | None, Depends(get_db_session)] = None,
 ) -> MeasurementRepository:
     """Provide measurement repository.
 
     Args:
         container: Dependency container.
+        session: Optional active request session.
 
     Returns:
         MeasurementRepository: Measurement repository.
     """
+    if container.use_database and session is not None:
+        return SqlAlchemyMeasurementRepository(session)
     return container.measurement_repo
 
 
