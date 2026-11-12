@@ -1,0 +1,272 @@
+"""FastAPI router for Cost Allocation bounded context endpoints."""
+
+from __future__ import annotations
+
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import APIRouter, Path, status
+
+from src.allocation.application.dto import (
+    AllocationShareDTO,
+    ApproveMeasurementCommand,
+    RegisterContractCommand,
+    SubmitMeasurementCommand,
+)
+from src.allocation.domain.exceptions import (
+    ContractNotFoundError,
+    MeasurementNotFoundError,
+)
+from src.presentation.dependencies import (
+    ApproveMeasurementUseCaseDep,
+    ContractRepoDep,
+    MeasurementRepoDep,
+    RegisterContractUseCaseDep,
+    SubmitMeasurementUseCaseDep,
+)
+from src.presentation.schemas.allocation import (
+    AllocationEntryResponse,
+    AllocationShareSchema,
+    ContractCreateRequest,
+    ContractResponse,
+    MeasurementResponse,
+    MeasurementSubmitRequest,
+)
+
+router = APIRouter(prefix="/api/v1", tags=["Cost Allocation"])
+
+
+@router.post(
+    "/contracts",
+    response_model=ContractResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a new supplier contract",
+)
+async def register_contract(
+    request: ContractCreateRequest,
+    use_case: RegisterContractUseCaseDep,
+) -> ContractResponse:
+    """Register vendor contract with optional default allocations.
+
+    Args:
+        request: Contract creation payload.
+        use_case: RegisterContractUseCase dependency.
+
+    Returns:
+        ContractResponse: Registered contract.
+    """
+    command = RegisterContractCommand(
+        code=request.code,
+        supplier_id=request.supplier_id,
+        title=request.title,
+        default_allocations=[
+            AllocationShareDTO(
+                cost_center_id=a.cost_center_id,
+                percentage=a.percentage,
+            )
+            for a in request.default_allocations
+        ],
+    )
+    result = await use_case.execute(command)
+    return ContractResponse(
+        id=result.id,
+        code=result.code,
+        supplier_id=result.supplier_id,
+        title=result.title,
+        default_allocations=[
+            AllocationShareSchema(
+                cost_center_id=a.cost_center_id,
+                percentage=a.percentage,
+            )
+            for a in result.default_allocations
+        ],
+        is_active=result.is_active,
+    )
+
+
+@router.get(
+    "/contracts/{contract_id}",
+    response_model=ContractResponse,
+    summary="Get contract details by ID",
+)
+async def get_contract(
+    contract_id: Annotated[UUID, Path(description="Contract UUID")],
+    repo: ContractRepoDep,
+) -> ContractResponse:
+    """Fetch contract details by identifier.
+
+    Args:
+        contract_id: Contract UUID.
+        repo: Contract repository dependency.
+
+    Returns:
+        ContractResponse: Contract details.
+
+    Raises:
+        ContractNotFoundError: If contract is not found.
+    """
+    contract = await repo.get_by_id(contract_id)
+    if not contract:
+        msg = f"Contract '{contract_id}' not found."
+        raise ContractNotFoundError(msg)
+
+    return ContractResponse(
+        id=contract.id,
+        code=contract.code,
+        supplier_id=contract.supplier_id,
+        title=contract.title,
+        default_allocations=[
+            AllocationShareSchema(
+                cost_center_id=a.cost_center_id,
+                percentage=a.percentage.value,
+            )
+            for a in contract.default_allocations
+        ],
+        is_active=contract.is_active,
+    )
+
+
+@router.post(
+    "/measurements",
+    response_model=MeasurementResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit a measurement expense",
+)
+async def submit_measurement(
+    request: MeasurementSubmitRequest,
+    use_case: SubmitMeasurementUseCaseDep,
+) -> MeasurementResponse:
+    """Submit financial measurement with exact penny reconciliation.
+
+    Args:
+        request: Measurement submission payload.
+        use_case: SubmitMeasurementUseCase dependency.
+
+    Returns:
+        MeasurementResponse: Created measurement and calculated allocations.
+    """
+    custom_allocations = (
+        [
+            AllocationShareDTO(
+                cost_center_id=a.cost_center_id,
+                percentage=a.percentage,
+            )
+            for a in request.allocation_override
+        ]
+        if request.allocation_override is not None
+        else None
+    )
+
+    command = SubmitMeasurementCommand(
+        contract_id=request.contract_id,
+        period=request.period,
+        description=request.description,
+        gross_amount=request.gross_amount,
+        currency=request.currency,
+        custom_allocations=custom_allocations,
+    )
+    result = await use_case.execute(command)
+    return MeasurementResponse(
+        id=result.id,
+        contract_id=result.contract_id,
+        period=result.period,
+        description=result.description,
+        gross_amount=result.gross_amount,
+        currency=result.currency,
+        state=result.state,
+        entries=[
+            AllocationEntryResponse(
+                cost_center_id=e.cost_center_id,
+                percentage=e.percentage,
+                amount=e.amount,
+                currency=e.currency,
+            )
+            for e in result.entries
+        ],
+    )
+
+
+@router.post(
+    "/measurements/{measurement_id}/approve",
+    response_model=MeasurementResponse,
+    summary="Approve a submitted measurement",
+)
+async def approve_measurement(
+    measurement_id: Annotated[UUID, Path(description="Measurement UUID")],
+    use_case: ApproveMeasurementUseCaseDep,
+) -> MeasurementResponse:
+    """Transition measurement to APPROVED, activating actual cost entries.
+
+    Args:
+        measurement_id: Measurement UUID.
+        use_case: ApproveMeasurementUseCase dependency.
+
+    Returns:
+        MeasurementResponse: Approved measurement.
+    """
+    command = ApproveMeasurementCommand(measurement_id=measurement_id)
+    result = await use_case.execute(command)
+    return MeasurementResponse(
+        id=result.id,
+        contract_id=result.contract_id,
+        period=result.period,
+        description=result.description,
+        gross_amount=result.gross_amount,
+        currency=result.currency,
+        state=result.state,
+        entries=[
+            AllocationEntryResponse(
+                cost_center_id=e.cost_center_id,
+                percentage=e.percentage,
+                amount=e.amount,
+                currency=e.currency,
+            )
+            for e in result.entries
+        ],
+    )
+
+
+@router.get(
+    "/measurements/{measurement_id}",
+    response_model=MeasurementResponse,
+    summary="Get measurement by ID",
+)
+async def get_measurement(
+    measurement_id: Annotated[UUID, Path(description="Measurement UUID")],
+    repo: MeasurementRepoDep,
+) -> MeasurementResponse:
+    """Fetch measurement details by identifier.
+
+    Args:
+        measurement_id: Measurement UUID.
+        repo: Measurement repository dependency.
+
+    Returns:
+        MeasurementResponse: Measurement details.
+
+    Raises:
+        MeasurementNotFoundError: If measurement is not found.
+    """
+    measurement = await repo.get_by_id(measurement_id)
+    if not measurement:
+        msg = f"Measurement '{measurement_id}' not found."
+        raise MeasurementNotFoundError(msg)
+
+    return MeasurementResponse(
+        id=measurement.id,
+        contract_id=measurement.contract_id,
+        period=str(measurement.period),
+        description=measurement.description,
+        gross_amount=measurement.gross_amount.amount,
+        currency=measurement.gross_amount.currency,
+        state=measurement.state.value,
+        entries=[
+            AllocationEntryResponse(
+                cost_center_id=e.cost_center_id,
+                percentage=e.percentage.value,
+                amount=e.amount.amount,
+                currency=e.amount.currency,
+            )
+            for e in measurement.entries
+        ],
+    )

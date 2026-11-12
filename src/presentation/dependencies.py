@@ -1,0 +1,440 @@
+"""FastAPI dependencies and composition root wiring."""
+
+from __future__ import annotations
+
+from typing import Annotated
+
+from fastapi import Depends
+
+from src.allocation.application.use_cases.approve_measurement import (
+    ApproveMeasurementUseCase,
+)
+from src.allocation.application.use_cases.register_contract import (
+    RegisterContractUseCase,
+)
+from src.allocation.application.use_cases.submit_measurement import (
+    SubmitMeasurementUseCase,
+)
+from src.allocation.domain.repositories.contract_repository import ContractRepository
+from src.allocation.domain.repositories.measurement_repository import (
+    MeasurementRepository,
+)
+from src.allocation.domain.repositories.supplier_repository import SupplierRepository
+from src.allocation.infrastructure.repositories.in_memory_allocation_repository import (
+    InMemoryContractRepository,
+    InMemoryMeasurementRepository,
+    InMemorySupplierRepository,
+)
+from src.budgeting.application.use_cases.create_cost_center import (
+    CreateCostCenterUseCase,
+)
+from src.budgeting.application.use_cases.get_hierarchy_budget import (
+    GetHierarchyBudgetUseCase,
+)
+from src.budgeting.application.use_cases.set_budget_target import (
+    SetBudgetTargetUseCase,
+)
+from src.budgeting.domain.repositories.budget_repository import BudgetRepository
+from src.budgeting.domain.repositories.cost_center_repository import (
+    CostCenterRepository,
+)
+from src.budgeting.infrastructure.repositories.in_memory_budgeting_repository import (
+    InMemoryBudgetRepository,
+    InMemoryCostCenterRepository,
+)
+from src.indicators.application.use_cases.compute_period_indicators import (
+    ComputePeriodIndicatorsUseCase,
+)
+from src.indicators.application.use_cases.simulate_scenario import (
+    SimulateScenarioUseCase,
+)
+from src.intelligence.application.ports.ai_port import AIPort
+from src.intelligence.application.use_cases.analyze_allocation_anomalies import (
+    AnalyzeAllocationAnomaliesUseCase,
+)
+from src.intelligence.application.use_cases.generate_executive_summary import (
+    GenerateExecutiveSummaryUseCase,
+)
+from src.intelligence.infrastructure.pydantic_ai_adapter import PydanticAIAdapter
+from src.shared.config.settings import Settings, get_settings
+
+
+class DependencyContainer:
+    """Singleton container maintaining shared repository state in memory."""
+
+    def __init__(self) -> None:
+        """Initialize empty container with default in-memory implementations."""
+        self.settings: Settings = get_settings()
+        self.cost_center_repo: CostCenterRepository = InMemoryCostCenterRepository()
+        self.budget_repo: BudgetRepository = InMemoryBudgetRepository()
+        self.supplier_repo: SupplierRepository = InMemorySupplierRepository()
+        self.contract_repo: ContractRepository = InMemoryContractRepository()
+        self.measurement_repo: MeasurementRepository = InMemoryMeasurementRepository()
+        self.ai_port: AIPort = PydanticAIAdapter(settings=self.settings)
+
+    def reset(self) -> None:
+        """Reset repository stores for testing isolation."""
+        self.cost_center_repo = InMemoryCostCenterRepository()
+        self.budget_repo = InMemoryBudgetRepository()
+        self.supplier_repo = InMemorySupplierRepository()
+        self.contract_repo = InMemoryContractRepository()
+        self.measurement_repo = InMemoryMeasurementRepository()
+        self.ai_port = PydanticAIAdapter(settings=self.settings)
+
+
+_container = DependencyContainer()
+
+
+def get_container() -> DependencyContainer:
+    """Return the global dependency container instance.
+
+    Returns:
+        DependencyContainer: Singleton dependency container.
+    """
+    return _container
+
+
+# --- Repository Providers ---
+
+
+def get_cost_center_repository(
+    container: Annotated[DependencyContainer, Depends(get_container)],
+) -> CostCenterRepository:
+    """Provide cost center repository.
+
+    Args:
+        container: Dependency container.
+
+    Returns:
+        CostCenterRepository: Cost center repository.
+    """
+    return container.cost_center_repo
+
+
+def get_budget_repository(
+    container: Annotated[DependencyContainer, Depends(get_container)],
+) -> BudgetRepository:
+    """Provide budget target repository.
+
+    Args:
+        container: Dependency container.
+
+    Returns:
+        BudgetRepository: Budget target repository.
+    """
+    return container.budget_repo
+
+
+def get_supplier_repository(
+    container: Annotated[DependencyContainer, Depends(get_container)],
+) -> SupplierRepository:
+    """Provide supplier repository.
+
+    Args:
+        container: Dependency container.
+
+    Returns:
+        SupplierRepository: Supplier repository.
+    """
+    return container.supplier_repo
+
+
+def get_contract_repository(
+    container: Annotated[DependencyContainer, Depends(get_container)],
+) -> ContractRepository:
+    """Provide contract repository.
+
+    Args:
+        container: Dependency container.
+
+    Returns:
+        ContractRepository: Contract repository.
+    """
+    return container.contract_repo
+
+
+def get_measurement_repository(
+    container: Annotated[DependencyContainer, Depends(get_container)],
+) -> MeasurementRepository:
+    """Provide measurement repository.
+
+    Args:
+        container: Dependency container.
+
+    Returns:
+        MeasurementRepository: Measurement repository.
+    """
+    return container.measurement_repo
+
+
+def get_ai_port(
+    container: Annotated[DependencyContainer, Depends(get_container)],
+) -> AIPort:
+    """Provide AI application port adapter.
+
+    Args:
+        container: Dependency container.
+
+    Returns:
+        AIPort: AI adapter.
+    """
+    return container.ai_port
+
+
+# --- Use Case Providers ---
+
+
+def get_create_cost_center_use_case(
+    repo: Annotated[CostCenterRepository, Depends(get_cost_center_repository)],
+) -> CreateCostCenterUseCase:
+    """Provide CreateCostCenterUseCase.
+
+    Args:
+        repo: Injected cost center repository.
+
+    Returns:
+        CreateCostCenterUseCase: Instantiated use case.
+    """
+    return CreateCostCenterUseCase(repository=repo)
+
+
+def get_set_budget_target_use_case(
+    budget_repo: Annotated[BudgetRepository, Depends(get_budget_repository)],
+    cc_repo: Annotated[CostCenterRepository, Depends(get_cost_center_repository)],
+) -> SetBudgetTargetUseCase:
+    """Provide SetBudgetTargetUseCase.
+
+    Args:
+        budget_repo: Injected budget repository.
+        cc_repo: Injected cost center repository.
+
+    Returns:
+        SetBudgetTargetUseCase: Instantiated use case.
+    """
+    return SetBudgetTargetUseCase(
+        budget_repository=budget_repo,
+        cost_center_repository=cc_repo,
+    )
+
+
+def get_get_hierarchy_budget_use_case(
+    cc_repo: Annotated[CostCenterRepository, Depends(get_cost_center_repository)],
+    budget_repo: Annotated[BudgetRepository, Depends(get_budget_repository)],
+) -> GetHierarchyBudgetUseCase:
+    """Provide GetHierarchyBudgetUseCase.
+
+    Args:
+        cc_repo: Injected cost center repository.
+        budget_repo: Injected budget repository.
+
+    Returns:
+        GetHierarchyBudgetUseCase: Instantiated use case.
+    """
+    return GetHierarchyBudgetUseCase(
+        cost_center_repository=cc_repo,
+        budget_repository=budget_repo,
+    )
+
+
+def get_register_contract_use_case(
+    contract_repo: Annotated[ContractRepository, Depends(get_contract_repository)],
+    supplier_repo: Annotated[SupplierRepository, Depends(get_supplier_repository)],
+) -> RegisterContractUseCase:
+    """Provide RegisterContractUseCase.
+
+    Args:
+        contract_repo: Injected contract repository.
+        supplier_repo: Injected supplier repository.
+
+    Returns:
+        RegisterContractUseCase: Instantiated use case.
+    """
+    return RegisterContractUseCase(
+        contract_repository=contract_repo,
+        supplier_repository=supplier_repo,
+    )
+
+
+def get_submit_measurement_use_case(
+    measurement_repo: Annotated[
+        MeasurementRepository, Depends(get_measurement_repository)
+    ],
+    contract_repo: Annotated[ContractRepository, Depends(get_contract_repository)],
+) -> SubmitMeasurementUseCase:
+    """Provide SubmitMeasurementUseCase.
+
+    Args:
+        measurement_repo: Injected measurement repository.
+        contract_repo: Injected contract repository.
+
+    Returns:
+        SubmitMeasurementUseCase: Instantiated use case.
+    """
+    return SubmitMeasurementUseCase(
+        measurement_repository=measurement_repo,
+        contract_repository=contract_repo,
+    )
+
+
+def get_approve_measurement_use_case(
+    measurement_repo: Annotated[
+        MeasurementRepository, Depends(get_measurement_repository)
+    ],
+) -> ApproveMeasurementUseCase:
+    """Provide ApproveMeasurementUseCase.
+
+    Args:
+        measurement_repo: Injected measurement repository.
+
+    Returns:
+        ApproveMeasurementUseCase: Instantiated use case.
+    """
+    return ApproveMeasurementUseCase(
+        measurement_repository=measurement_repo,
+    )
+
+
+def get_compute_period_indicators_use_case(
+    cc_repo: Annotated[CostCenterRepository, Depends(get_cost_center_repository)],
+    budget_repo: Annotated[BudgetRepository, Depends(get_budget_repository)],
+    measurement_repo: Annotated[
+        MeasurementRepository, Depends(get_measurement_repository)
+    ],
+) -> ComputePeriodIndicatorsUseCase:
+    """Provide ComputePeriodIndicatorsUseCase.
+
+    Args:
+        cc_repo: Cost center repository.
+        budget_repo: Budget repository.
+        measurement_repo: Measurement repository.
+
+    Returns:
+        ComputePeriodIndicatorsUseCase: Instantiated use case.
+    """
+    return ComputePeriodIndicatorsUseCase(
+        cost_center_repository=cc_repo,
+        budget_repository=budget_repo,
+        measurement_repository=measurement_repo,
+    )
+
+
+def get_simulate_scenario_use_case(
+    cc_repo: Annotated[CostCenterRepository, Depends(get_cost_center_repository)],
+    budget_repo: Annotated[BudgetRepository, Depends(get_budget_repository)],
+    measurement_repo: Annotated[
+        MeasurementRepository, Depends(get_measurement_repository)
+    ],
+) -> SimulateScenarioUseCase:
+    """Provide SimulateScenarioUseCase.
+
+    Args:
+        cc_repo: Cost center repository.
+        budget_repo: Budget repository.
+        measurement_repo: Measurement repository.
+
+    Returns:
+        SimulateScenarioUseCase: Instantiated use case.
+    """
+    return SimulateScenarioUseCase(
+        cost_center_repository=cc_repo,
+        budget_repository=budget_repo,
+        measurement_repository=measurement_repo,
+    )
+
+
+def get_analyze_anomalies_use_case(
+    measurement_repo: Annotated[
+        MeasurementRepository, Depends(get_measurement_repository)
+    ],
+    indicators_uc: Annotated[
+        ComputePeriodIndicatorsUseCase,
+        Depends(get_compute_period_indicators_use_case),
+    ],
+) -> AnalyzeAllocationAnomaliesUseCase:
+    """Provide AnalyzeAllocationAnomaliesUseCase.
+
+    Args:
+        measurement_repo: Measurement repository.
+        indicators_uc: Period indicators use case.
+
+    Returns:
+        AnalyzeAllocationAnomaliesUseCase: Instantiated use case.
+    """
+    return AnalyzeAllocationAnomaliesUseCase(
+        measurement_repository=measurement_repo,
+        indicators_use_case=indicators_uc,
+    )
+
+
+def get_generate_executive_summary_use_case(
+    indicators_uc: Annotated[
+        ComputePeriodIndicatorsUseCase,
+        Depends(get_compute_period_indicators_use_case),
+    ],
+    anomalies_uc: Annotated[
+        AnalyzeAllocationAnomaliesUseCase,
+        Depends(get_analyze_anomalies_use_case),
+    ],
+    ai_port: Annotated[AIPort, Depends(get_ai_port)],
+    container: Annotated[DependencyContainer, Depends(get_container)],
+) -> GenerateExecutiveSummaryUseCase:
+    """Provide GenerateExecutiveSummaryUseCase.
+
+    Args:
+        indicators_uc: Indicators use case.
+        anomalies_uc: Anomalies use case.
+        ai_port: AI port.
+        container: Dependency container.
+
+    Returns:
+        GenerateExecutiveSummaryUseCase: Instantiated use case.
+    """
+    return GenerateExecutiveSummaryUseCase(
+        indicators_use_case=indicators_uc,
+        anomalies_use_case=anomalies_uc,
+        ai_port=ai_port,
+        settings=container.settings,
+    )
+
+
+# --- Dependency Type Aliases ---
+
+CreateCostCenterUseCaseDep = Annotated[
+    CreateCostCenterUseCase, Depends(get_create_cost_center_use_case)
+]
+SetBudgetTargetUseCaseDep = Annotated[
+    SetBudgetTargetUseCase, Depends(get_set_budget_target_use_case)
+]
+GetHierarchyBudgetUseCaseDep = Annotated[
+    GetHierarchyBudgetUseCase, Depends(get_get_hierarchy_budget_use_case)
+]
+RegisterContractUseCaseDep = Annotated[
+    RegisterContractUseCase, Depends(get_register_contract_use_case)
+]
+SubmitMeasurementUseCaseDep = Annotated[
+    SubmitMeasurementUseCase, Depends(get_submit_measurement_use_case)
+]
+ApproveMeasurementUseCaseDep = Annotated[
+    ApproveMeasurementUseCase, Depends(get_approve_measurement_use_case)
+]
+ComputePeriodIndicatorsUseCaseDep = Annotated[
+    ComputePeriodIndicatorsUseCase,
+    Depends(get_compute_period_indicators_use_case),
+]
+SimulateScenarioUseCaseDep = Annotated[
+    SimulateScenarioUseCase, Depends(get_simulate_scenario_use_case)
+]
+AnalyzeAnomaliesUseCaseDep = Annotated[
+    AnalyzeAllocationAnomaliesUseCase,
+    Depends(get_analyze_anomalies_use_case),
+]
+GenerateExecutiveSummaryUseCaseDep = Annotated[
+    GenerateExecutiveSummaryUseCase,
+    Depends(get_generate_executive_summary_use_case),
+]
+CostCenterRepoDep = Annotated[CostCenterRepository, Depends(get_cost_center_repository)]
+ContractRepoDep = Annotated[ContractRepository, Depends(get_contract_repository)]
+MeasurementRepoDep = Annotated[
+    MeasurementRepository, Depends(get_measurement_repository)
+]
+SupplierRepoDep = Annotated[SupplierRepository, Depends(get_supplier_repository)]

@@ -37,10 +37,10 @@
 
 ## 6. Presentation Layer & OpenAPI Contracts
 
-- [ ] 6.1 Implement FastAPI presentation router and Pydantic DTOs for `budgeting` endpoints (`/api/v1/cost-centers`, `/api/v1/budgets`) and verify with HTTP test client
-- [ ] 6.2 Implement FastAPI presentation router and Pydantic DTOs for `allocation` endpoints (`/api/v1/contracts`, `/api/v1/measurements`) and verify with HTTP test client
-- [ ] 6.3 Implement FastAPI presentation router and Pydantic DTOs for `indicators` and `intelligence` endpoints (`/api/v1/indicators/{period}`, `/api/v1/scenarios/simulate`, `/api/v1/intelligence/executive-summary`) and verify with HTTP test client
-- [ ] 6.4 Write BDD feature specifications and step definitions with `pytest-bdd` verifying end-to-end acceptance scenarios across all capabilities in `tests/bdd/`
+- [x] 6.1 Implement FastAPI presentation router and Pydantic DTOs for `budgeting` endpoints (`/api/v1/cost-centers`, `/api/v1/budgets`) and verify with HTTP test client
+- [x] 6.2 Implement FastAPI presentation router and Pydantic DTOs for `allocation` endpoints (`/api/v1/contracts`, `/api/v1/measurements`) and verify with HTTP test client
+- [x] 6.3 Implement FastAPI presentation router and Pydantic DTOs for `indicators` and `intelligence` endpoints (`/api/v1/indicators/{period}`, `/api/v1/scenarios/simulate`, `/api/v1/intelligence/executive-summary`) and verify with HTTP test client
+- [x] 6.4 Write BDD feature specifications and step definitions with `pytest-bdd` verifying end-to-end acceptance scenarios across all capabilities in `tests/bdd/`
 
 ## 7. Quality Assurance & Static Verification
 
