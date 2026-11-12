@@ -113,3 +113,22 @@ async def test_should_compute_indicators_and_simulate_scenario(
     resp_anomalies = await client.get(f"/api/v1/intelligence/anomalies/{m_id}")
     assert resp_anomalies.status_code == 200
     assert isinstance(resp_anomalies.json(), list)
+
+    # 5. Download Executive Summary PDF
+    resp_pdf = await client.get(
+        "/api/v1/intelligence/executive-summary/pdf?period=2026-03"
+    )
+    assert resp_pdf.status_code == 200
+    assert resp_pdf.headers["content-type"] == "application/pdf"
+    assert (
+        'attachment; filename="executive-summary-2026-03.pdf"'
+        in resp_pdf.headers["content-disposition"]
+    )
+    assert resp_pdf.content.startswith(b"%PDF")
+    assert len(resp_pdf.content) > 1000
+
+    # 6. Reject invalid period format for PDF download
+    resp_invalid_pdf = await client.get(
+        "/api/v1/intelligence/executive-summary/pdf?period=2026-13"
+    )
+    assert resp_invalid_pdf.status_code == 422
