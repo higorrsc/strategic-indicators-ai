@@ -9,9 +9,9 @@
 
 ## 2. Budgeting Context Persistence (Phase 1)
 
-- [ ] 2.1 Implement SQLAlchemy ORM models (`CostCenterModel`, `BudgetTargetModel`) in `src/budgeting/infrastructure/database/models.py`
-- [ ] 2.2 Implement `SqlAlchemyCostCenterRepository` and `SqlAlchemyBudgetRepository` in `src/budgeting/infrastructure/repositories/`
-- [ ] 2.3 Write integration tests for Budgeting database repositories using async in-memory SQLite in `tests/integration/database/test_budgeting_persistence.py` and verify tests pass
+- [x] 2.1 Implement SQLAlchemy ORM models (`CostCenterModel`, `BudgetTargetModel`) in `src/budgeting/infrastructure/database/models.py`
+- [x] 2.2 Implement `SqlAlchemyCostCenterRepository` and `SqlAlchemyBudgetRepository` in `src/budgeting/infrastructure/repositories/`
+- [x] 2.3 Write integration tests for Budgeting database repositories using async in-memory SQLite in `tests/integration/database/test_budgeting_persistence.py` and verify tests pass
 
 ## 3. Cost Allocation Context Persistence (Phase 2)
 

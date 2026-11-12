@@ -70,6 +70,11 @@ class Period:
         """Return string representation in YYYY-MM format."""
         return f"{self.year:04d}-{self.month:02d}"
 
+    @property
+    def value(self) -> str:
+        """Return formatted period string value in YYYY-MM format."""
+        return str(self)
+
     def __repr__(self) -> str:
         """Return developer representation."""
         return f"Period('{self}')"
