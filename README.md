@@ -204,6 +204,9 @@ The persistence architecture follows Clean Architecture boundaries:
 │   ├── script.py.mako              # Migration template
 │   └── versions/                   # Migration revision scripts
 │
+├── scripts/                        # Automation & seeding scripts
+│   └── seed_ai_data.py             # Realistic financial dataset seeder & AI agent tester
+│
 ├── src/
 │   ├── shared/                     # Cross-cutting domain and infrastructure foundation
 │   │   ├── config/                 # Centralized Settings (pydantic-settings)
@@ -377,6 +380,24 @@ uv run alembic upgrade head
 # Roll back all migrations
 uv run alembic downgrade base
 ```
+
+### Seeding AI Test Data
+
+To populate a realistic enterprise financial dataset and trigger the AI strategic analyst agent:
+
+```bash
+# Seed against configured PostgreSQL database (reads settings from .env)
+uv run python -m scripts.seed_ai_data
+
+# Reset tables and seed test data with in-memory SQLite (deterministic offline run)
+AI_PROVIDER=fake uv run python -m scripts.seed_ai_data --database-url "sqlite+aiosqlite:///:memory:" --clean
+```
+
+The seed script establishes:
+- A 3-level cost center hierarchy (`1.0` Corporate &rarr; `1.1` IT [`1.1.1` Cloud, `1.1.2` Software], `1.2` Operations, `1.3` Marketing).
+- Multi-period budget targets and vendor contracts (`CT-AWS-2026`, `CT-LOG-2026`, `CT-MKT-2026`).
+- Historical baseline measurements (`2026-01`, `2026-02`).
+- Target period (`2026-03`) with a deliberate +30% allocation spike on Cloud Infrastructure ($117k actual vs $100k budget &rarr; `CRITICAL_OVERRUN`) triggering heuristic anomaly detection and executive AI briefings.
 
 ### Running the Development Server
 
