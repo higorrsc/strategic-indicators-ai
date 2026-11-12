@@ -23,9 +23,9 @@
 
 ## 4. Budget Indicators & Simulation Bounded Context
 
-- [ ] 4.1 Implement `BudgetVarianceCalculator` domain service computing variance, execution rate, and threshold alerts (`NORMAL`, `WARNING`, `CRITICAL_OVERRUN`) in `src/indicators/domain/services/variance_calculator.py` and verify with unit tests
-- [ ] 4.2 Implement `WhatIfSimulator` domain service evaluating cost inflation adjustments and allocation shifts in-memory in `src/indicators/domain/services/simulator.py` and verify with unit tests
-- [ ] 4.3 Implement use cases (`ComputePeriodIndicatorsUseCase`, `SimulateScenarioUseCase`) in `src/indicators/application/use_cases/` and verify with application unit tests
+- [x] 4.1 Implement `BudgetVarianceCalculator` domain service computing variance, execution rate, and threshold alerts (`NORMAL`, `WARNING`, `CRITICAL_OVERRUN`) in `src/indicators/domain/services/variance_calculator.py` and verify with unit tests
+- [x] 4.2 Implement `WhatIfSimulator` domain service evaluating cost inflation adjustments and allocation shifts in-memory in `src/indicators/domain/services/simulator.py` and verify with unit tests
+- [x] 4.3 Implement use cases (`ComputePeriodIndicatorsUseCase`, `SimulateScenarioUseCase`) in `src/indicators/application/use_cases/` and verify with application unit tests
 
 ## 5. Strategic Intelligence Context (Multi-Provider AI & Anomaly Detection)
 
