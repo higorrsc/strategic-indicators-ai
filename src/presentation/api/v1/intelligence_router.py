@@ -5,11 +5,14 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, Path, Query, Response
 
 from src.presentation.dependencies import (
     AnalyzeAnomaliesUseCaseDep,
     GenerateExecutiveSummaryUseCaseDep,
+)
+from src.presentation.reports.executive_summary_pdf import (
+    ExecutiveSummaryPDFBuilder,
 )
 from src.presentation.schemas.indicators import (
     CostCenterIndicatorResponse,
@@ -88,6 +91,50 @@ async def get_executive_summary(
         ),
         is_fallback=result.is_fallback,
         ai_provider=result.ai_provider,
+    )
+
+
+@router.get(
+    "/executive-summary/pdf",
+    summary="Download formatted PDF executive briefing report",
+    responses={
+        200: {
+            "content": {"application/pdf": {}},
+            "description": "Binary PDF executive briefing document.",
+        }
+    },
+)
+async def download_executive_summary_pdf(
+    period: Annotated[
+        str,
+        Query(
+            description="Target fiscal period in YYYY-MM format",
+            pattern=r"^\d{4}-(0[1-9]|1[0-2])$",
+        ),
+    ],
+    use_case: GenerateExecutiveSummaryUseCaseDep,
+) -> Response:
+    """Generate and stream a publication-ready PDF executive report.
+
+    Args:
+        period: Target fiscal period string (YYYY-MM).
+        use_case: GenerateExecutiveSummaryUseCase dependency.
+
+    Returns:
+        Response: Streaming binary PDF with attachment content-disposition.
+    """
+    target_period = Period.from_string(period)
+    result = await use_case.execute(target_period)
+    pdf_bytes = ExecutiveSummaryPDFBuilder().build(result)
+
+    filename = f"executive-summary-{period}.pdf"
+    headers = {
+        "Content-Disposition": f'attachment; filename="{filename}"',
+    }
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers=headers,
     )
 
 

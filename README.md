@@ -8,7 +8,7 @@
 [![Docker](https://img.shields.io/badge/docker-compose-2496ED.svg)](https://www.docker.com/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Architecture](https://img.shields.io/badge/architecture-Clean%20%2B%20DDD-orange.svg)]()
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)]()
 
 A production-grade corporate financial governance and strategic intelligence platform engineered in Python following **SOLID**, **Domain-Driven Design (DDD)**, and **Clean Architecture** principles.
@@ -458,7 +458,8 @@ Access the application:
 | **Indicators** | `GET` | `/api/v1/indicators/{period}` | Compute period variance and execution status |
 | **Scenarios** | `POST` | `/api/v1/scenarios/simulate` | In-memory What-If simulation (inflation & shifts) |
 | **Intelligence** | `GET` | `/api/v1/intelligence/anomalies/{id}` | Detect abrupt rateio shifts and budget dumping |
-| **Intelligence** | `POST` | `/api/v1/intelligence/executive-summary` | Generate AI executive analysis and action plan |
+| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary` | Generate AI executive analysis and action plan |
+| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary/pdf` | Download formatted binary PDF executive briefing |
 
 ### Standardized Pagination Envelope
 
@@ -534,6 +535,7 @@ Development is driven directly from formal specifications using [OpenSpec](https
   - `2026-11-12-async-database-persistence`: Asynchronous SQLAlchemy 2.0, Alembic, PostgreSQL Docker Compose, and SQLite in-memory test suite.
   - `2026-11-12-list-contracts-and-measurements`: Query endpoints for contracts and measurements with multi-criteria filtering.
   - `2026-11-12-standard-api-pagination`: Standardized API pagination with HATEOAS navigation links across collection endpoints.
+  - `2026-11-12-pdf-executive-summary-report`: Downloadable publication-ready binary PDF executive briefing reports.
   - Synchronized living capability specifications in [`openspec/specs/`](openspec/specs/):
     - `budgeting`: Cost center hierarchy and recursive budget aggregation rules.
     - `cost-allocation`: Contract registration and exact-penny allocation reconciliation.
