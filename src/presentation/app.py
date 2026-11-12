@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from src.presentation.api.v1 import (
@@ -10,6 +13,7 @@ from src.presentation.api.v1 import (
     indicators_router,
     intelligence_router,
 )
+from src.presentation.dependencies import get_container
 from src.presentation.exception_handlers import register_exception_handlers
 from src.shared.config.settings import Settings, get_settings
 
@@ -25,6 +29,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """
     app_settings = settings or get_settings()
 
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
+        container = get_container()
+        if not container.use_database and app_settings.DATABASE_URL:
+            await container.init_database(
+                app_settings.DATABASE_URL,
+                echo=app_settings.DATABASE_ECHO,
+            )
+        yield
+        if container.use_database:
+            await container.close_database()
+
     app = FastAPI(
         title=app_settings.APP_NAME,
         description=(
@@ -33,6 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
         version="0.1.0",
         debug=app_settings.DEBUG,
+        lifespan=lifespan,
     )
 
     register_exception_handlers(app)

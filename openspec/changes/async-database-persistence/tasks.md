@@ -32,9 +32,9 @@
 
 ## 6. Containerization with Docker Compose & PostgreSQL
 
-- [ ] 6.1 Create multi-stage production `Dockerfile` for the FastAPI application with `uv`
-- [ ] 6.2 Create `docker-compose.yml` with `db` (PostgreSQL 16 Alpine + healthcheck) and `app` (FastAPI + migration hook)
-- [ ] 6.3 Verify docker compose configuration syntax with `docker compose config`
+- [x] 6.1 Create multi-stage production `Dockerfile` for the FastAPI application with `uv`
+- [x] 6.2 Create `docker-compose.yml` with `db` (PostgreSQL 16 Alpine + healthcheck) and `app` (FastAPI + migration hook)
+- [x] 6.3 Verify docker compose configuration syntax with `docker compose config`
 
 ## 7. Quality Assurance & Static Verification
 
