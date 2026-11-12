@@ -44,10 +44,10 @@
 
 ## 7. Quality Assurance & Static Verification
 
-- [ ] 7.1 Run code formatter (`uv run ruff format .`) and verify style compliance
-- [ ] 7.2 Run linter (`uv run ruff check .`) and resolve all warnings
-- [ ] 7.3 Run static type checker (`uv run pyrefly check`) and confirm zero type errors
-- [ ] 7.4 Execute complete test suite (`uv run pytest`) and confirm all unit, integration, and BDD tests pass
+- [x] 7.1 Run code formatter (`uv run ruff format .`) and verify style compliance
+- [x] 7.2 Run linter (`uv run ruff check .`) and resolve all warnings
+- [x] 7.3 Run static type checker (`uv run pyrefly check`) and confirm zero type errors
+- [x] 7.4 Execute complete test suite (`uv run pytest`) and confirm all unit, integration, and BDD tests pass
 
 ## Workflow follow-up
 
