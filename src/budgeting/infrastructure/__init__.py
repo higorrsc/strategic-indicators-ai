@@ -1,0 +1,1 @@
+"""Budgeting infrastructure layer package."""

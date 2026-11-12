@@ -1,6 +1,12 @@
 {
   "version": 2,
   "skills": {
+    "building-pydantic-ai-agents": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/building-pydantic-ai-agents/SKILL.md",
+      "computedHash": "433337a7d3227af428621c007a01bceca0caf621ab1a770adc39754ad6cba06e"
+    },
     "clean-ddd-hexagonal": {
       "source": "ccheney/robust-skills",
       "sourceType": "github",
@@ -13,11 +19,137 @@
       "skillPath": "fastapi/.agents/skills/fastapi/SKILL.md",
       "computedHash": "3e2cd1457114d2ba9f29ec17303732f1c9c4ecdd3e61fae36d05de40d94516ea"
     },
+    "logfire-codex-connection": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/logfire/skills/logfire-codex-connection/SKILL.md",
+      "computedHash": "08412f17189283b9db8df98321c80892de36130e1137d20900cf4950c9613831"
+    },
+    "logfire-coding-agents": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-coding-agents/SKILL.md",
+      "computedHash": "f7289366a9575f1c5e3259aa79599977b80a08eb0eca143f2c83bf53b2b3fe28"
+    },
+    "logfire-evals": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-evals/SKILL.md",
+      "computedHash": "71dcfba7daedc681c9267b91b9087a4c5aca1f99d15a4e7e5a71df45f8155772"
+    },
+    "logfire-frontend": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-frontend/SKILL.md",
+      "computedHash": "17ae986495dd3d4f5e9f5122e16dfa4d4d934752e1fdffea12c748fe658d74bd"
+    },
+    "logfire-gateway": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-gateway/SKILL.md",
+      "computedHash": "5dcc65b02d7b68368d8a49a1e85ddacf53c96fbc1130c0b78c97334591af94cc"
+    },
+    "logfire-infrastructure": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-infrastructure/SKILL.md",
+      "computedHash": "05b225c40c22076b47980a71e2ec5fb97808530b50053090dd1f6f72796d378f"
+    },
+    "logfire-instrumentation": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-instrumentation/SKILL.md",
+      "computedHash": "bc254c5e5209275ce548244a33b386fc89c797c07e447ecd75a1d3599ef877d3"
+    },
+    "logfire-query": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-query/SKILL.md",
+      "computedHash": "336d2e0f4b43eb27aac6621f1f41daa3f3c34bbe0f204942578772a9c6cd1877"
+    },
+    "logfire-setup": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-setup/SKILL.md",
+      "computedHash": "e7aa888e40d8eac8b7e4d8c24a1d94906bd9379df2b126ee4a46b0c93bec371f"
+    },
+    "logfire-ui": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/logfire-ui/SKILL.md",
+      "computedHash": "2035144cca21a5ea14d148b16d0d2cd8a4143df8e1dc371915aec6586440252c"
+    },
+    "migrating-agno-to-pydantic-ai": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-agno-to-pydantic-ai/SKILL.md",
+      "computedHash": "89afb32600814de672eaef49d16c043477deb4319887eb560bb96ef99ea615e6"
+    },
+    "migrating-claude-agent-sdk-to-pydantic-ai": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-claude-agent-sdk-to-pydantic-ai/SKILL.md",
+      "computedHash": "28ca5c1dc410eec800eaa92aff36e0e5a2b29a622d6d41fe0425fbeb479a942c"
+    },
+    "migrating-deep-agents-to-pydantic-ai-harness": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-deep-agents-to-pydantic-ai-harness/SKILL.md",
+      "computedHash": "e58a2338ae2342d72731fbb103643bf09fcfcbe3ca20c3df8a51e9f3d98fc206"
+    },
+    "migrating-google-adk-to-pydantic-ai": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-google-adk-to-pydantic-ai/SKILL.md",
+      "computedHash": "753a0ad10fcede8b3725b5e78578b1079dafc042f4d673b846f63523631e15bf"
+    },
+    "migrating-langchain-to-pydantic-ai": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-langchain-to-pydantic-ai/SKILL.md",
+      "computedHash": "647d30d1b5f071089ce29a6ea4066954cce427e95041c06afb5c20cbf6dcfc35"
+    },
+    "migrating-mastra-to-pydantic-ai": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-mastra-to-pydantic-ai/SKILL.md",
+      "computedHash": "d8e27756ca858b395611d7fca6ab230592966c2c724ab2bdd4f66c1940f116b4"
+    },
+    "migrating-openai-agents-sdk-to-pydantic-ai": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-openai-agents-sdk-to-pydantic-ai/SKILL.md",
+      "computedHash": "109d6aa59440db917a2887d9e9d5bcac4d28b3f2a7c59bc24b50f85cc1828a9a"
+    },
+    "migrating-pi-to-pydantic-ai": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-pi-to-pydantic-ai/SKILL.md",
+      "computedHash": "71190420b77f1a0fa3fdde0a4a8de490c6338a218ee5f89e0b41e5306c070191"
+    },
+    "migrating-vercel-ai-sdk-and-eve-to-pydantic-ai": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrating-vercel-ai-sdk-and-eve-to-pydantic-ai/SKILL.md",
+      "computedHash": "480795798da1d654509f2f09f718c23fc6fc8df84710b8c2285cbb15a9070caa"
+    },
     "pydantic": {
       "source": "pydantic/skills",
       "sourceType": "github",
       "skillPath": "skills/pydantic/SKILL.md",
       "computedHash": "434540e43897b5ad8db567d7a77bd71ec0522e10134aaa23941050ca7ff7e1e7"
+    },
+    "pydantic-ai-harness": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/pydantic-ai-harness/SKILL.md",
+      "computedHash": "24a3fe2c4d061dfb3d4211f506df542c8ce607a66f02e0f8d09e21c64f610bb0"
+    },
+    "sqlalchemy-alembic-expert-best-practices-code-review": {
+      "source": "wispbit-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/sqlalchemy-alembic-expert-best-practices-code-review/SKILL.md",
+      "computedHash": "27057d0d20b80b4e0b2368ccd147877f4018800fb8b553f41eee5a836697b0cb"
     }
   }
 }
