@@ -8,11 +8,16 @@ authors = [
 ]
 requires-python = ">=3.15.0"
 dependencies = [
+  "aiosqlite>=0.20.0",
+  "alembic>=1.14.0",
+  "asyncpg>=0.30.0",
   "fastapi>=0.115.0",
+  "greenlet>=3.1.1",
   "httpx>=0.28.0",
   "pydantic>=2.10.0",
   "pydantic-ai>=2.67.0",
   "pydantic-settings>=2.7.0",
+  "sqlalchemy>=2.0.36",
 ]
 
 [dependency-groups]

@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     DEFAULT_CURRENCY: str = "USD"
 
+    # Database configuration
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/strategic_indicators"
+    )
+    DATABASE_ECHO: bool = False
+
     # AI Provider configuration: "ollama", "google", "openai", "fake"
     AI_PROVIDER: Literal["ollama", "google", "openai", "fake"] = "ollama"
     AI_MODEL: str = "llama3.2"
