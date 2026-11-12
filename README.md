@@ -8,7 +8,7 @@
 [![Docker](https://img.shields.io/badge/docker-compose-2496ED.svg)](https://www.docker.com/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Architecture](https://img.shields.io/badge/architecture-Clean%20%2B%20DDD-orange.svg)]()
-[![Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)]()
 
 A production-grade corporate financial governance and strategic intelligence platform engineered in Python following **SOLID**, **Domain-Driven Design (DDD)**, and **Clean Architecture** principles.
@@ -105,7 +105,13 @@ flowchart TD
 - **Exact-Penny Cost Allocation Engine (Rateios)**:
   - Multi-center percentage rateios utilizing the **Largest Remainder Method** to reconcile fractional cents against gross invoice amounts ($0.00 rounding discrepancy).
   - Supplier contract defaults with per-measurement allocation override capabilities.
+  - Multi-criteria collection querying for contracts (`supplier_id`, `active_only`) and measurements (`period`, `contract_id`, `state`).
   - Strict measurement state machine (`DRAFT` &rarr; `SUBMITTED` &rarr; `APPROVED` or `CANCELLED`).
+
+- **Standardized API Pagination & HATEOAS Navigation**:
+  - Uniform envelope structure (`data`, `pagination`, `links`) across all collection endpoints.
+  - Pagination parameters: 1-based `page` and bounded `perPage` (1–100, default 20).
+  - Full hypermedia navigation links (`self`, `first`, `last`, `next`, `prev`) with automatic query parameter retention.
 
 - **Deterministic Budget Variance & Threshold Alerting**:
   - Planned vs. Actual calculations: Variance Amount ($\text{Actual} - \text{Budget}$), Execution Rate ($\text{Actual} / \text{Budget}$), and Remaining Balance.
@@ -236,7 +242,7 @@ The persistence architecture follows Clean Architecture boundaries:
 │   │   │   └── exceptions.py       # Allocation domain exceptions
 │   │   ├── application/
 │   │   │   ├── dto.py              # Allocation DTOs
-│   │   │   └── use_cases/          # RegisterContract, SubmitMeasurement, ApproveMeasurement
+│   │   │   └── use_cases/          # RegisterContract, SubmitMeasurement, ApproveMeasurement, ListContracts, ListMeasurements
 │   │   └── infrastructure/
 │   │       ├── database/           # SupplierModel, ContractModel, MeasurementModel, etc.
 │   │       └── repositories/       # In-memory and SQLAlchemy allocation repositories
@@ -267,7 +273,7 @@ The persistence architecture follows Clean Architecture boundaries:
 │       ├── app.py                  # FastAPI application factory & lifespan DB manager
 │       ├── dependencies.py         # Composition Root / DependencyContainer
 │       ├── exception_handlers.py   # Domain-to-HTTP status code mappings
-│       ├── schemas/                # Pydantic presentation DTOs
+│       ├── schemas/                # Pydantic presentation DTOs & generic PaginatedResponse
 │       └── api/v1/                 # Modular API routers
 │           ├── budgeting_router.py # Cost center and budget endpoints
 │           ├── allocation_router.py# Contract and measurement endpoints
@@ -275,7 +281,13 @@ The persistence architecture follows Clean Architecture boundaries:
 │           └── intelligence_router.py # Anomaly and AI summary endpoints
 │
 ├── tests/
-│   ├── unit/                       # Pure domain and application unit tests
+│   ├── unit/                       # Pure domain, application, and presentation unit tests
+│   │   ├── allocation/             # Rateio, rounding, and contract use case unit tests
+│   │   ├── budgeting/              # Hierarchy tree and budget target unit tests
+│   │   ├── indicators/             # Variance calculation and simulation unit tests
+│   │   ├── intelligence/           # Heuristic anomaly detector unit tests
+│   │   ├── presentation/           # HATEOAS link builder and pagination unit tests
+│   │   └── shared/                 # Value objects and settings unit tests
 │   ├── integration/
 │   │   └── database/               # Asynchronous database persistence integration tests
 │   ├── api/                        # HTTP API integration tests via AsyncClient
@@ -432,17 +444,57 @@ Access the application:
 | Resource | HTTP Method | Endpoint | Description |
 | --- | --- | --- | --- |
 | **Cost Centers** | `POST` | `/api/v1/cost-centers` | Register a new cost center in the hierarchy |
+| **Cost Centers** | `GET` | `/api/v1/cost-centers` | List active cost centers (paginated) |
 | **Cost Centers** | `GET` | `/api/v1/cost-centers/{id}` | Retrieve cost center details |
 | **Cost Centers** | `GET` | `/api/v1/cost-centers/{id}/hierarchy-budget` | Compute direct and consolidated subtree budget |
 | **Budgets** | `POST` | `/api/v1/budgets` | Set monthly budget target for a cost center |
 | **Contracts** | `POST` | `/api/v1/contracts` | Register vendor contract with default allocations |
+| **Contracts** | `GET` | `/api/v1/contracts` | List contracts with optional `supplier_id` & `active_only` (paginated) |
 | **Contracts** | `GET` | `/api/v1/contracts/{id}` | Retrieve contract information |
 | **Measurements** | `POST` | `/api/v1/measurements` | Submit measurement with exact penny split |
+| **Measurements** | `GET` | `/api/v1/measurements` | List measurements with optional `period`, `contract_id` & `state` (paginated) |
+| **Measurements** | `GET` | `/api/v1/measurements/{id}` | Retrieve measurement details |
 | **Measurements** | `POST` | `/api/v1/measurements/{id}/approve` | Approve measurement and lock allocation |
 | **Indicators** | `GET` | `/api/v1/indicators/{period}` | Compute period variance and execution status |
 | **Scenarios** | `POST` | `/api/v1/scenarios/simulate` | In-memory What-If simulation (inflation & shifts) |
 | **Intelligence** | `GET` | `/api/v1/intelligence/anomalies/{id}` | Detect abrupt rateio shifts and budget dumping |
 | **Intelligence** | `POST` | `/api/v1/intelligence/executive-summary` | Generate AI executive analysis and action plan |
+
+### Standardized Pagination Envelope
+
+All collection listing endpoints (`GET /api/v1/contracts`, `GET /api/v1/measurements`, `GET /api/v1/cost-centers`) return a standardized envelope with metadata and HATEOAS navigation links:
+
+- **Query Parameters**:
+  - `page`: Current page number (integer $\ge 1$, default `1`).
+  - `perPage`: Records per page (integer between `1` and `100`, default `20`).
+  - Multi-criteria filter parameters (such as `period`, `supplier_id`, or `state`) are automatically retained across all navigation links.
+
+```json
+{
+  "data": [
+    {
+      "id": "73847754-733f-49da-99ae-b85645e26e68",
+      "code": "CT-AWS-2026",
+      "supplier_id": "c028fd50-d34b-4d19-8df1-89d3ca238d3b",
+      "title": "Enterprise Cloud Hosting & Compute Services",
+      "is_active": true
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "perPage": 20,
+    "totalItems": 3,
+    "totalPages": 1
+  },
+  "links": {
+    "self": "/api/v1/contracts?page=1&perPage=20",
+    "first": "/api/v1/contracts?page=1&perPage=20",
+    "last": "/api/v1/contracts?page=1&perPage=20",
+    "next": null,
+    "prev": null
+  }
+}
+```
 
 ---
 
@@ -480,12 +532,15 @@ Development is driven directly from formal specifications using [OpenSpec](https
 - **Archived Changes & Living Specs**:
   - `2026-11-12-strategic-budget-indicators`: Initial core domain implementation.
   - `2026-11-12-async-database-persistence`: Asynchronous SQLAlchemy 2.0, Alembic, PostgreSQL Docker Compose, and SQLite in-memory test suite.
+  - `2026-11-12-list-contracts-and-measurements`: Query endpoints for contracts and measurements with multi-criteria filtering.
+  - `2026-11-12-standard-api-pagination`: Standardized API pagination with HATEOAS navigation links across collection endpoints.
   - Synchronized living capability specifications in [`openspec/specs/`](openspec/specs/):
     - `budgeting`: Cost center hierarchy and recursive budget aggregation rules.
     - `cost-allocation`: Contract registration and exact-penny allocation reconciliation.
     - `budget-indicators`: Variance formulas, thresholds, and what-if simulation semantics.
     - `strategic-intelligence`: Heuristic anomaly detection and Pydantic AI executive briefing rules.
     - `database-persistence`: Asynchronous multi-database engine, migrations, and repository persistence.
+    - `api-pagination`: Universal collection envelope, query parameter parsing, and HATEOAS link preservation.
 
 - **BDD Feature Suite**: Executable Gherkin scenarios in [`tests/bdd/features/strategic_budget_indicators.feature`](tests/bdd/features/strategic_budget_indicators.feature):
   - `Hierarchical cost center management and budget aggregation`
