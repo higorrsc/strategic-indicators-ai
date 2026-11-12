@@ -144,6 +144,12 @@
       "sourceType": "github",
       "skillPath": "skills/pydantic-ai-harness/SKILL.md",
       "computedHash": "24a3fe2c4d061dfb3d4211f506df542c8ce607a66f02e0f8d09e21c64f610bb0"
+    },
+    "sqlalchemy-alembic-expert-best-practices-code-review": {
+      "source": "wispbit-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/sqlalchemy-alembic-expert-best-practices-code-review/SKILL.md",
+      "computedHash": "27057d0d20b80b4e0b2368ccd147877f4018800fb8b553f41eee5a836697b0cb"
     }
   }
 }
