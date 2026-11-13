@@ -138,10 +138,12 @@ flowchart TD
   - **Abrupt Shift Detection**: Identifies single-period allocation spikes $\ge 15\%$ relative to historical contract baselines.
   - **Budget Dumping Detection**: Flags anomalous allocation shifts directed toward cost centers at or above budget capacity to artificially protect critical divisions.
 
-- **Multi-Provider Strategic AI Insights**:
+- **Multi-Provider Strategic AI Insights & Intelligent Caching**:
   - Autonomous executive summaries and action recommendations powered by **Pydantic AI**.
   - Flexible provider backends: Local Ollama (zero data exfiltration), Google Gemini, OpenAI, and deterministic fake adapter for automated test suites.
   - Autonomous fallback mechanism ensuring uninterrupted financial insights during external LLM outages.
+  - **Intelligent Multi-Tier Caching & Drift Invalidation**: Configurable 24-hour TTL (`AI_CACHE_TTL_HOURS`), automatic invalidation on underlying financial data drift (SHA-256 fingerprinting of indicators and anomalies), on-demand forced recalculation (`force_refresh=true`), and response caching headers (`X-Cache-Status`).
+  - **Dimensional Scoping**: AI analysis scoped globally, by individual Cost Center (`cost_center_id`), or Accounting Account (`accounting_account_id`).
 
 - **Asynchronous Relational Persistence & Migrations**:
   - 100% asynchronous relational database layer using SQLAlchemy 2.0 and `asyncpg`.
@@ -269,13 +271,17 @@ The persistence architecture follows Clean Architecture boundaries:
 │   ├── intelligence/               # Strategic Intelligence & AI Context
 │   │   ├── domain/
 │   │   │   ├── models.py           # AllocationAnomaly
+│   │   │   ├── cache.py            # AIAnalysisCache, CacheStatus enum
 │   │   │   ├── services/           # AllocationAnomalyDetector
 │   │   │   └── exceptions.py       # Intelligence domain exceptions
 │   │   ├── application/
-│   │   │   ├── ports/              # AIPort protocol and schema contracts
+│   │   │   ├── ports/              # AIPort, AIAnalysisCacheRepository protocols
+│   │   │   ├── services/           # DataFingerprintService (SHA-256 drift detection)
 │   │   │   ├── dto.py              # Intelligence DTOs
 │   │   │   └── use_cases/          # AnalyzeAllocationAnomalies, GenerateExecutiveSummary
 │   │   └── infrastructure/
+│   │       ├── database/           # AIAnalysisCacheModel
+│   │       ├── repositories/       # SqlAlchemy and InMemory AIAnalysisCache repositories
 │   │       ├── fake_ai_adapter.py  # Deterministic FakeAIPort for tests
 │   │       └── pydantic_ai_adapter.py # Multi-provider Pydantic AI Adapter
 │   │
@@ -382,6 +388,7 @@ AI_MODEL="llama3.2"
 AI_BASE_URL="http://localhost:11434/v1"
 AI_API_KEY=""
 AI_TIMEOUT_SECONDS=30.0
+AI_CACHE_TTL_HOURS=24
 ```
 
 > **Note on AI Providers**:
@@ -474,8 +481,8 @@ Access the application:
 | **Scenarios** | `POST` | `/api/v1/scenarios/simulate` | In-memory What-If simulation (inflation & shifts) |
 
 | **Intelligence** | `GET` | `/api/v1/intelligence/anomalies/{id}` | Detect abrupt rateio shifts and budget dumping |
-| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary` | Generate AI executive analysis and action plan (`lang=pt-br` or `en-us`) |
-| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary/pdf` | Download formatted binary PDF executive briefing (`lang=pt-br` or `en-us`) |
+| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary` | Generate AI executive analysis with intelligent caching and drift invalidation (`lang`, `cost_center_id`, `accounting_account_id`, `force_refresh`; returns `X-Cache-Status` header) |
+| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary/pdf` | Download formatted binary PDF executive briefing with cached metadata (`lang`, `cost_center_id`, `accounting_account_id`, `force_refresh`; returns `X-Cache-Status` header) |
 
 ### Standardized Pagination Envelope
 
