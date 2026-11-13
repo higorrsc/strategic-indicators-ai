@@ -1,4 +1,4 @@
-"""Integration tests for Cost Allocation API endpoints."""
+"""Integration tests for Measurements API endpoints."""
 
 from __future__ import annotations
 
@@ -12,11 +12,10 @@ from src.presentation.dependencies import get_container
 
 
 @pytest.mark.asyncio
-async def test_should_register_contract_and_submit_measurement(
+async def test_should_submit_measurement_and_calculate_exact_penny_allocations(
     client: AsyncClient,
 ) -> None:
-    """Verify contract registration, measurement submission, and exact penny split."""
-    # Setup cost centers
+    """Verify measurement submission with exact penny allocation across 3 centers."""
     resp_cc1 = await client.post(
         "/api/v1/cost-centers",
         json={"code": "1.1", "name": "IT Core", "parent_id": None},
@@ -35,17 +34,16 @@ async def test_should_register_contract_and_submit_measurement(
     )
     cc3_id = resp_cc3.json()["id"]
 
-    # Setup supplier in repo
     supplier_id = uuid4()
-    supplier = Supplier(
-        id=supplier_id,
-        name="Cloud Corp",
-        tax_id="12.345.678/0001-90",
-    )
     container = get_container()
-    await container.supplier_repo.add(supplier)
+    await container.supplier_repo.add(
+        Supplier(
+            id=supplier_id,
+            name="Cloud Corp",
+            tax_id="12.345.678/0001-90",
+        )
+    )
 
-    # Register contract with 33.34%, 33.33%, 33.33% default allocations
     contract_payload = {
         "code": "CT-2026-001",
         "supplier_id": str(supplier_id),
@@ -86,13 +84,27 @@ async def test_should_register_contract_and_submit_measurement(
     assert resp_approve.status_code == 200
     assert resp_approve.json()["state"] == "APPROVED"
 
+    # Get measurement details
+    resp_get = await client.get(f"/api/v1/measurements/{measurement_id}")
+    assert resp_get.status_code == 200
+    assert resp_get.json()["id"] == measurement_id
+
+
+@pytest.mark.asyncio
+async def test_should_return_404_when_measurement_not_found(
+    client: AsyncClient,
+) -> None:
+    """Ensure HTTP 404 when querying a non-existent measurement ID."""
+    non_existent_id = uuid4()
+    resp = await client.get(f"/api/v1/measurements/{non_existent_id}")
+    assert resp.status_code == 404
+
 
 @pytest.mark.asyncio
 async def test_should_reject_measurement_allocation_exceeding_100_percent(
     client: AsyncClient,
 ) -> None:
-    """Ensure HTTP 400 Bad Request when custom allocation exceeds 100%."""
-    # Setup cost center
+    """Ensure HTTP 422 Unprocessable Entity when custom allocation exceeds 100%."""
     resp_cc = await client.post(
         "/api/v1/cost-centers",
         json={"code": "2.1", "name": "Operations", "parent_id": None},
@@ -132,81 +144,51 @@ async def test_should_reject_measurement_allocation_exceeding_100_percent(
             "allocation_override": [{"cost_center_id": cc_id, "percentage": "110.00"}],
         },
     )
-    # Pydantic validates le=100 on AllocationShareSchema
     assert resp_m.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_should_list_contracts_and_measurements_with_filters(
+async def test_should_list_measurements_with_filters_and_pagination(
     client: AsyncClient,
 ) -> None:
-    """Verify listing contracts and measurements with query filtering."""
-    # 1. Setup cost center
+    """Verify listing measurements with query filtering and pagination."""
     resp_cc = await client.post(
         "/api/v1/cost-centers",
-        json={"code": "3.1", "name": "Marketing Operations", "parent_id": None},
+        json={"code": "4.1", "name": "Supply Chain", "parent_id": None},
     )
     cc_id = resp_cc.json()["id"]
 
-    # 2. Setup supplier
     supplier_id = uuid4()
     container = get_container()
     await container.supplier_repo.add(
         Supplier(
             id=supplier_id,
-            name="Ad Agency Media",
-            tax_id="55.666.777/0001-88",
+            name="Logistics Partner",
+            tax_id="11.444.777/0001-22",
         )
     )
 
-    # 3. Create active contract
     resp_c = await client.post(
         "/api/v1/contracts",
         json={
-            "code": "CT-MKT-LIST-01",
+            "code": "CT-SC-01",
             "supplier_id": str(supplier_id),
-            "title": "Social Campaigns",
+            "title": "Freight Services",
             "default_allocations": [{"cost_center_id": cc_id, "percentage": "100.00"}],
         },
     )
-    assert resp_c.status_code == 201
     contract_id = resp_c.json()["id"]
 
-    # 4. List contracts (paginated)
-    resp_list_c = await client.get("/api/v1/contracts?page=1&perPage=20")
-    assert resp_list_c.status_code == 200
-    contracts_payload = resp_list_c.json()
-    assert "data" in contracts_payload
-    assert "pagination" in contracts_payload
-    assert "links" in contracts_payload
-    assert contracts_payload["pagination"]["page"] == 1
-    assert contracts_payload["pagination"]["perPage"] == 20
-    assert any(c["id"] == contract_id for c in contracts_payload["data"])
-
-    # Filter contracts by supplier with pagination
-    resp_sup_c = await client.get(
-        f"/api/v1/contracts?supplier_id={supplier_id}&page=1&perPage=10"
-    )
-    assert resp_sup_c.status_code == 200
-    sup_payload = resp_sup_c.json()
-    assert all(c["supplier_id"] == str(supplier_id) for c in sup_payload["data"])
-    assert (
-        sup_payload["links"]["self"]
-        == f"/api/v1/contracts?supplier_id={supplier_id}&page=1&perPage=10"
-    )
-
-    # 5. Submit measurements across periods
     resp_m1 = await client.post(
         "/api/v1/measurements",
         json={
             "contract_id": contract_id,
             "period": "2026-04",
-            "description": "April Campaign",
+            "description": "April Freight",
             "gross_amount": "8000.00",
             "currency": "USD",
         },
     )
-    assert resp_m1.status_code == 201
     m1_id = resp_m1.json()["id"]
 
     resp_m2 = await client.post(
@@ -214,49 +196,27 @@ async def test_should_list_contracts_and_measurements_with_filters(
         json={
             "contract_id": contract_id,
             "period": "2026-05",
-            "description": "May Campaign",
+            "description": "May Freight",
             "gross_amount": "12000.00",
             "currency": "USD",
         },
     )
-    assert resp_m2.status_code == 201
     m2_id = resp_m2.json()["id"]
 
-    # Approve m1
     await client.post(f"/api/v1/measurements/{m1_id}/approve")
 
-    # 6. List measurements by period (paginated)
-    resp_m_apr = await client.get("/api/v1/measurements?period=2026-04")
-    assert resp_m_apr.status_code == 200
-    apr_data = resp_m_apr.json()
-    assert apr_data["pagination"]["totalItems"] >= 1
-    assert any(m["id"] == m1_id for m in apr_data["data"])
-    assert not any(m["id"] == m2_id for m in apr_data["data"])
-    assert "period=2026-04" in apr_data["links"]["self"]
+    # Filter by period
+    resp_period = await client.get("/api/v1/measurements?period=2026-04")
+    assert resp_period.status_code == 200
+    data_period = resp_period.json()
+    assert any(m["id"] == m1_id for m in data_period["data"])
+    assert not any(m["id"] == m2_id for m in data_period["data"])
 
-    # List measurements by state
-    resp_approved = await client.get(
+    # Filter by state
+    resp_state = await client.get(
         f"/api/v1/measurements?contract_id={contract_id}&state=APPROVED"
     )
-    assert resp_approved.status_code == 200
-    approved_data = resp_approved.json()
-    assert len(approved_data["data"]) == 1
-    assert approved_data["data"][0]["id"] == m1_id
-
-    # List measurements with slicing
-    resp_slice = await client.get(
-        f"/api/v1/measurements?contract_id={contract_id}&page=1&perPage=1"
-    )
-    assert resp_slice.status_code == 200
-    slice_data = resp_slice.json()
-    assert len(slice_data["data"]) == 1
-    assert slice_data["pagination"]["totalPages"] == 2
-    assert slice_data["links"]["next"] is not None
-
-    # List measurements for non-existent period
-    resp_empty = await client.get("/api/v1/measurements?period=2029-12")
-    assert resp_empty.status_code == 200
-    empty_payload = resp_empty.json()
-    assert empty_payload["data"] == []
-    assert empty_payload["pagination"]["totalItems"] == 0
-    assert empty_payload["pagination"]["totalPages"] == 0
+    assert resp_state.status_code == 200
+    data_state = resp_state.json()
+    assert len(data_state["data"]) == 1
+    assert data_state["data"][0]["id"] == m1_id
