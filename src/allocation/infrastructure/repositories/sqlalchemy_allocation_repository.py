@@ -523,4 +523,3 @@ class SqlAlchemyAccountingAccountRepository(AccountingAccountRepository):
             stmt = stmt.where(AccountingAccountModel.is_active.is_(True))
         res = await self._session.execute(stmt)
         return res.scalar_one() or 0
-

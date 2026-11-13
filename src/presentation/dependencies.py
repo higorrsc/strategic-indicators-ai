@@ -15,11 +15,20 @@ from sqlalchemy.ext.asyncio import (
 from src.allocation.application.use_cases.approve_measurement import (
     ApproveMeasurementUseCase,
 )
+from src.allocation.application.use_cases.get_cost_center_accounting_breakdown import (
+    GetCostCenterAccountingBreakdownUseCase,
+)
+from src.allocation.application.use_cases.list_accounting_accounts import (
+    ListAccountingAccountsUseCase,
+)
 from src.allocation.application.use_cases.list_contracts import (
     ListContractsUseCase,
 )
 from src.allocation.application.use_cases.list_measurements import (
     ListMeasurementsUseCase,
+)
+from src.allocation.application.use_cases.register_accounting_account import (
+    RegisterAccountingAccountUseCase,
 )
 from src.allocation.application.use_cases.register_contract import (
     RegisterContractUseCase,
@@ -27,15 +36,20 @@ from src.allocation.application.use_cases.register_contract import (
 from src.allocation.application.use_cases.submit_measurement import (
     SubmitMeasurementUseCase,
 )
+from src.allocation.domain.repositories.accounting_account_repository import (
+    AccountingAccountRepository,
+)
 from src.allocation.domain.repositories.contract_repository import ContractRepository
 from src.allocation.domain.repositories.measurement_repository import (
     MeasurementRepository,
 )
 from src.allocation.domain.repositories.supplier_repository import SupplierRepository
 from src.allocation.infrastructure.repositories import (
+    InMemoryAccountingAccountRepository,
     InMemoryContractRepository,
     InMemoryMeasurementRepository,
     InMemorySupplierRepository,
+    SqlAlchemyAccountingAccountRepository,
     SqlAlchemyContractRepository,
     SqlAlchemyMeasurementRepository,
     SqlAlchemySupplierRepository,
@@ -75,6 +89,7 @@ from src.intelligence.application.use_cases.generate_executive_summary import (
 from src.intelligence.infrastructure.pydantic_ai_adapter import PydanticAIAdapter
 from src.shared.config.settings import Settings, get_settings
 from src.shared.infrastructure.database.repositories import (
+    SessionManagedAccountingAccountRepository,
     SessionManagedBudgetRepository,
     SessionManagedContractRepository,
     SessionManagedCostCenterRepository,
@@ -102,6 +117,9 @@ class DependencyContainer:
         self.supplier_repo: SupplierRepository = InMemorySupplierRepository()
         self.contract_repo: ContractRepository = InMemoryContractRepository()
         self.measurement_repo: MeasurementRepository = InMemoryMeasurementRepository()
+        self.accounting_account_repo: AccountingAccountRepository = (
+            InMemoryAccountingAccountRepository()
+        )
         self.ai_port: AIPort = PydanticAIAdapter(settings=self.settings)
 
     async def init_database(
@@ -125,6 +143,9 @@ class DependencyContainer:
         self.measurement_repo = SessionManagedMeasurementRepository(
             self.session_factory
         )
+        self.accounting_account_repo = SessionManagedAccountingAccountRepository(
+            self.session_factory
+        )
         self.ai_port = PydanticAIAdapter(settings=self.settings)
 
     async def close_database(self) -> None:
@@ -143,6 +164,7 @@ class DependencyContainer:
             self.supplier_repo = InMemorySupplierRepository()
             self.contract_repo = InMemoryContractRepository()
             self.measurement_repo = InMemoryMeasurementRepository()
+            self.accounting_account_repo = InMemoryAccountingAccountRepository()
         self.ai_port = PydanticAIAdapter(settings=self.settings)
 
 
@@ -273,6 +295,24 @@ def get_measurement_repository(
     return container.measurement_repo
 
 
+def get_accounting_account_repository(
+    container: Annotated[DependencyContainer, Depends(get_container)],
+    session: Annotated[AsyncSession | None, Depends(get_db_session)] = None,
+) -> AccountingAccountRepository:
+    """Provide accounting account repository.
+
+    Args:
+        container: Dependency container.
+        session: Optional active request session.
+
+    Returns:
+        AccountingAccountRepository: Accounting account repository.
+    """
+    if container.use_database and session is not None:
+        return SqlAlchemyAccountingAccountRepository(session)
+    return container.accounting_account_repo
+
+
 def get_ai_port(
     container: Annotated[DependencyContainer, Depends(get_container)],
 ) -> AIPort:
@@ -366,12 +406,16 @@ def get_submit_measurement_use_case(
         MeasurementRepository, Depends(get_measurement_repository)
     ],
     contract_repo: Annotated[ContractRepository, Depends(get_contract_repository)],
+    accounting_account_repo: Annotated[
+        AccountingAccountRepository, Depends(get_accounting_account_repository)
+    ],
 ) -> SubmitMeasurementUseCase:
     """Provide SubmitMeasurementUseCase.
 
     Args:
         measurement_repo: Injected measurement repository.
         contract_repo: Injected contract repository.
+        accounting_account_repo: Injected accounting account repository.
 
     Returns:
         SubmitMeasurementUseCase: Instantiated use case.
@@ -379,6 +423,62 @@ def get_submit_measurement_use_case(
     return SubmitMeasurementUseCase(
         measurement_repository=measurement_repo,
         contract_repository=contract_repo,
+        accounting_account_repository=accounting_account_repo,
+    )
+
+
+def get_register_accounting_account_use_case(
+    repo: Annotated[
+        AccountingAccountRepository, Depends(get_accounting_account_repository)
+    ],
+) -> RegisterAccountingAccountUseCase:
+    """Provide RegisterAccountingAccountUseCase.
+
+    Args:
+        repo: Injected accounting account repository.
+
+    Returns:
+        RegisterAccountingAccountUseCase: Instantiated use case.
+    """
+    return RegisterAccountingAccountUseCase(accounting_account_repository=repo)
+
+
+def get_list_accounting_accounts_use_case(
+    repo: Annotated[
+        AccountingAccountRepository, Depends(get_accounting_account_repository)
+    ],
+) -> ListAccountingAccountsUseCase:
+    """Provide ListAccountingAccountsUseCase.
+
+    Args:
+        repo: Injected accounting account repository.
+
+    Returns:
+        ListAccountingAccountsUseCase: Instantiated use case.
+    """
+    return ListAccountingAccountsUseCase(accounting_account_repository=repo)
+
+
+def get_cost_center_accounting_breakdown_use_case(
+    measurement_repo: Annotated[
+        MeasurementRepository, Depends(get_measurement_repository)
+    ],
+    accounting_account_repo: Annotated[
+        AccountingAccountRepository, Depends(get_accounting_account_repository)
+    ],
+) -> GetCostCenterAccountingBreakdownUseCase:
+    """Provide GetCostCenterAccountingBreakdownUseCase.
+
+    Args:
+        measurement_repo: Injected measurement repository.
+        accounting_account_repo: Injected accounting account repository.
+
+    Returns:
+        GetCostCenterAccountingBreakdownUseCase: Instantiated use case.
+    """
+    return GetCostCenterAccountingBreakdownUseCase(
+        measurement_repository=measurement_repo,
+        accounting_account_repository=accounting_account_repo,
     )
 
 
@@ -580,3 +680,18 @@ MeasurementRepoDep = Annotated[
     MeasurementRepository, Depends(get_measurement_repository)
 ]
 SupplierRepoDep = Annotated[SupplierRepository, Depends(get_supplier_repository)]
+AccountingAccountRepoDep = Annotated[
+    AccountingAccountRepository, Depends(get_accounting_account_repository)
+]
+RegisterAccountingAccountUseCaseDep = Annotated[
+    RegisterAccountingAccountUseCase,
+    Depends(get_register_accounting_account_use_case),
+]
+ListAccountingAccountsUseCaseDep = Annotated[
+    ListAccountingAccountsUseCase,
+    Depends(get_list_accounting_accounts_use_case),
+]
+GetCostCenterAccountingBreakdownUseCaseDep = Annotated[
+    GetCostCenterAccountingBreakdownUseCase,
+    Depends(get_cost_center_accounting_breakdown_use_case),
+]

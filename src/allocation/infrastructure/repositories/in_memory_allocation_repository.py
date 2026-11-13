@@ -305,4 +305,3 @@ class InMemoryAccountingAccountRepository(AccountingAccountRepository):
         if active_only:
             return sum(1 for a in self._accounts.values() if a.is_active)
         return len(self._accounts)
-

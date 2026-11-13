@@ -101,7 +101,5 @@ def downgrade() -> None:
     )
     op.drop_column("contract_default_allocations", "accounting_account_id")
 
-    op.drop_index(
-        op.f("ix_accounting_accounts_code"), table_name="accounting_accounts"
-    )
+    op.drop_index(op.f("ix_accounting_accounts_code"), table_name="accounting_accounts")
     op.drop_table("accounting_accounts")

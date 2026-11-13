@@ -1,5 +1,11 @@
 """Presentation layer Pydantic schemas for request and response serialization."""
 
+from src.presentation.schemas.accounting import (
+    AccountingAccountCreateRequest,
+    AccountingAccountResponse,
+    CostCenterAccountingBreakdownResponse,
+    CostCenterAccountSpendResponse,
+)
 from src.presentation.schemas.allocation import (
     AllocationEntryResponse,
     AllocationShareSchema,
@@ -29,6 +35,8 @@ from src.presentation.schemas.intelligence import (
 )
 
 __all__ = [
+    "AccountingAccountCreateRequest",
+    "AccountingAccountResponse",
     "AllocationEntryResponse",
     "AllocationShareSchema",
     "AllocationShiftSchema",
@@ -37,6 +45,8 @@ __all__ = [
     "BudgetTargetSetRequest",
     "ContractCreateRequest",
     "ContractResponse",
+    "CostCenterAccountSpendResponse",
+    "CostCenterAccountingBreakdownResponse",
     "CostCenterCreateRequest",
     "CostCenterImpactResponse",
     "CostCenterIndicatorResponse",

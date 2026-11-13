@@ -160,4 +160,3 @@ class CostCenterAccountingBreakdownDTO:
     period: str
     total_spent: Decimal
     accounts: list[CostCenterAccountSpendDTO]
-

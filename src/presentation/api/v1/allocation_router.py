@@ -73,6 +73,7 @@ async def register_contract(
             AllocationShareDTO(
                 cost_center_id=a.cost_center_id,
                 percentage=a.percentage,
+                accounting_account_id=a.accounting_account_id,
             )
             for a in request.default_allocations
         ],
@@ -87,6 +88,7 @@ async def register_contract(
             AllocationShareSchema(
                 cost_center_id=a.cost_center_id,
                 percentage=a.percentage,
+                accounting_account_id=a.accounting_account_id,
             )
             for a in result.default_allocations
         ],
@@ -150,6 +152,7 @@ async def list_contracts(
                 AllocationShareSchema(
                     cost_center_id=a.cost_center_id,
                     percentage=a.percentage,
+                    accounting_account_id=a.accounting_account_id,
                 )
                 for a in c.default_allocations
             ],
@@ -211,6 +214,7 @@ async def get_contract(
             AllocationShareSchema(
                 cost_center_id=a.cost_center_id,
                 percentage=a.percentage.value,
+                accounting_account_id=a.accounting_account_id,
             )
             for a in contract.default_allocations
         ],
@@ -242,6 +246,7 @@ async def submit_measurement(
             AllocationShareDTO(
                 cost_center_id=a.cost_center_id,
                 percentage=a.percentage,
+                accounting_account_id=a.accounting_account_id,
             )
             for a in request.allocation_override
         ]
@@ -272,6 +277,7 @@ async def submit_measurement(
                 percentage=e.percentage,
                 amount=e.amount,
                 currency=e.currency,
+                accounting_account_id=e.accounting_account_id,
             )
             for e in result.entries
         ],
@@ -312,6 +318,7 @@ async def approve_measurement(
                 percentage=e.percentage,
                 amount=e.amount,
                 currency=e.currency,
+                accounting_account_id=e.accounting_account_id,
             )
             for e in result.entries
         ],
@@ -358,6 +365,7 @@ async def get_measurement(
                 percentage=e.percentage.value,
                 amount=e.amount.amount,
                 currency=e.amount.currency,
+                accounting_account_id=e.accounting_account_id,
             )
             for e in measurement.entries
         ],
@@ -440,6 +448,7 @@ async def list_measurements(
                     percentage=e.percentage,
                     amount=e.amount,
                     currency=e.currency,
+                    accounting_account_id=e.accounting_account_id,
                 )
                 for e in m.entries
             ],

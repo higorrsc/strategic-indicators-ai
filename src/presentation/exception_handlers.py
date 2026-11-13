@@ -8,9 +8,11 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
 from src.allocation.domain.exceptions import (
+    AccountingAccountNotFoundError,
     AllocationDomainError,
     AllocationReconciliationError,
     ContractNotFoundError,
+    DuplicateAccountCodeError,
     InvalidAllocationPercentageError,
     InvalidMeasurementStateError,
     MeasurementNotFoundError,
@@ -55,6 +57,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(MeasurementNotFoundError)
     @app.exception_handler(ContractNotFoundError)
     @app.exception_handler(SupplierNotFoundError)
+    @app.exception_handler(AccountingAccountNotFoundError)
     async def not_found_handler(_request: Request, exc: DomainError) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -62,6 +65,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(DuplicateCostCenterCodeError)
+    @app.exception_handler(DuplicateAccountCodeError)
     @app.exception_handler(CircularCostCenterHierarchyError)
     @app.exception_handler(InvalidMeasurementStateError)
     async def conflict_handler(_request: Request, exc: DomainError) -> JSONResponse:

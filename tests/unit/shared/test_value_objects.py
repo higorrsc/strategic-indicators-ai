@@ -167,4 +167,3 @@ class TestAccountCode:
             AccountCode(".3.1")
         with pytest.raises(InvalidAccountCodeError):
             AccountCode("3.1.abc")
-

@@ -19,6 +19,10 @@ class AllocationShareSchema(BaseModel):
         le=Decimal("100"),
         description="Percentage share (0.01 to 100.00).",
     )
+    accounting_account_id: UUID | None = Field(
+        default=None,
+        description="Optional accounting account UUID classifying expense nature.",
+    )
 
 
 class ContractCreateRequest(BaseModel):
@@ -57,6 +61,7 @@ class AllocationEntryResponse(BaseModel):
     percentage: Decimal
     amount: Decimal
     currency: str
+    accounting_account_id: UUID | None = None
 
 
 class MeasurementSubmitRequest(BaseModel):
