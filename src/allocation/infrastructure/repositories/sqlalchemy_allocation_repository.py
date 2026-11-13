@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.allocation.domain.entities.accounting_account import AccountingAccount
 from src.allocation.domain.entities.contract import AllocationShare, Contract
 from src.allocation.domain.entities.measurement import (
     AllocationEntry,
@@ -17,7 +18,11 @@ from src.allocation.domain.entities.supplier import Supplier
 from src.allocation.domain.exceptions import (
     AllocationDomainError,
     ContractNotFoundError,
+    DuplicateAccountCodeError,
     MeasurementNotFoundError,
+)
+from src.allocation.domain.repositories.accounting_account_repository import (
+    AccountingAccountRepository,
 )
 from src.allocation.domain.repositories.contract_repository import (
     ContractRepository,
@@ -29,13 +34,14 @@ from src.allocation.domain.repositories.supplier_repository import (
     SupplierRepository,
 )
 from src.allocation.infrastructure.database.models import (
+    AccountingAccountModel,
     AllocationEntryModel,
     ContractAllocationModel,
     ContractModel,
     MeasurementModel,
     SupplierModel,
 )
-from src.shared.domain.value_objects import Money, Percentage, Period
+from src.shared.domain.value_objects import AccountCode, Money, Percentage, Period
 
 
 def _to_supplier_entity(model: SupplierModel) -> Supplier:
@@ -47,12 +53,24 @@ def _to_supplier_entity(model: SupplierModel) -> Supplier:
     )
 
 
+def _to_accounting_account_entity(model: AccountingAccountModel) -> AccountingAccount:
+    """Map an AccountingAccountModel to a pure AccountingAccount domain entity."""
+    return AccountingAccount(
+        id=model.id,
+        code=AccountCode(model.code),
+        name=model.name,
+        description=model.description,
+        is_active=model.is_active,
+    )
+
+
 def _to_contract_entity(model: ContractModel) -> Contract:
     """Map a ContractModel to a pure Contract domain entity."""
     default_allocations = [
         AllocationShare(
             cost_center_id=a.cost_center_id,
             percentage=Percentage(a.percentage),
+            accounting_account_id=a.accounting_account_id,
         )
         for a in model.default_allocations
     ]
@@ -74,6 +92,7 @@ def _to_measurement_entity(model: MeasurementModel) -> Measurement:
             cost_center_id=e.cost_center_id,
             amount=Money(e.amount, e.currency),
             percentage=Percentage(e.percentage),
+            accounting_account_id=e.accounting_account_id,
         )
         for e in model.entries
     ]
@@ -174,6 +193,7 @@ class SqlAlchemyContractRepository(ContractRepository):
                 contract_id=contract.id,
                 cost_center_id=share.cost_center_id,
                 percentage=share.percentage.value,
+                accounting_account_id=share.accounting_account_id,
             )
             model.default_allocations.append(alloc_model)
 
@@ -273,6 +293,7 @@ class SqlAlchemyMeasurementRepository(MeasurementRepository):
                 amount=entry.amount.amount,
                 currency=entry.amount.currency,
                 percentage=entry.percentage.value,
+                accounting_account_id=entry.accounting_account_id,
             )
             model.entries.append(entry_model)
 
@@ -382,6 +403,124 @@ class SqlAlchemyMeasurementRepository(MeasurementRepository):
                     amount=entry.amount.amount,
                     currency=entry.amount.currency,
                     percentage=entry.percentage.value,
+                    accounting_account_id=entry.accounting_account_id,
                 )
             )
         await self._session.flush()
+
+
+class SqlAlchemyAccountingAccountRepository(AccountingAccountRepository):
+    """SQLAlchemy implementation of AccountingAccountRepository."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize repository with active asynchronous database session.
+
+        Args:
+            session: Active SQLAlchemy AsyncSession.
+        """
+        self._session = session
+
+    async def save(self, account: AccountingAccount) -> None:
+        """Persist a new or updated accounting account.
+
+        Args:
+            account: AccountingAccount entity to persist.
+        """
+        stmt = select(AccountingAccountModel).where(
+            AccountingAccountModel.id == account.id
+        )
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        if model is None:
+            dup_stmt = select(AccountingAccountModel).where(
+                AccountingAccountModel.code == account.code.value
+            )
+            dup_res = await self._session.execute(dup_stmt)
+            if dup_res.scalar_one_or_none() is not None:
+                raise DuplicateAccountCodeError(
+                    f"Accounting account with code '{account.code}' already exists."
+                )
+            model = AccountingAccountModel(
+                id=account.id,
+                code=account.code.value,
+                name=account.name,
+                description=account.description,
+                is_active=account.is_active,
+            )
+            self._session.add(model)
+        else:
+            model.name = account.name
+            model.description = account.description
+            model.is_active = account.is_active
+        await self._session.flush()
+
+    async def get_by_id(self, account_id: UUID) -> AccountingAccount | None:
+        """Find accounting account by UUID.
+
+        Args:
+            account_id: Account UUID.
+
+        Returns:
+            AccountingAccount or None.
+        """
+        stmt = select(AccountingAccountModel).where(
+            AccountingAccountModel.id == account_id
+        )
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return _to_accounting_account_entity(model) if model else None
+
+    async def get_by_code(self, code: AccountCode) -> AccountingAccount | None:
+        """Find accounting account by code.
+
+        Args:
+            code: AccountCode value object.
+
+        Returns:
+            AccountingAccount or None.
+        """
+        stmt = select(AccountingAccountModel).where(
+            AccountingAccountModel.code == code.value
+        )
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return _to_accounting_account_entity(model) if model else None
+
+    async def list_all(
+        self,
+        active_only: bool = True,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> list[AccountingAccount]:
+        """List accounting accounts with active filter and pagination.
+
+        Args:
+            active_only: Filter by active status.
+            offset: Items to skip.
+            limit: Maximum items.
+
+        Returns:
+            List of accounting accounts.
+        """
+        stmt = select(AccountingAccountModel)
+        if active_only:
+            stmt = stmt.where(AccountingAccountModel.is_active.is_(True))
+        stmt = stmt.order_by(AccountingAccountModel.code).offset(offset).limit(limit)
+        res = await self._session.execute(stmt)
+        return [_to_accounting_account_entity(m) for m in res.scalars().all()]
+
+    async def count(self, active_only: bool = True) -> int:
+        """Count total accounting accounts.
+
+        Args:
+            active_only: Filter by active status.
+
+        Returns:
+            Total count.
+        """
+        stmt = select(func.count(AccountingAccountModel.id))
+        if active_only:
+            stmt = stmt.where(AccountingAccountModel.is_active.is_(True))
+        res = await self._session.execute(stmt)
+        return res.scalar_one() or 0
+

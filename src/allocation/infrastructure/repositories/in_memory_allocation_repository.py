@@ -4,13 +4,18 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from src.allocation.domain.entities.accounting_account import AccountingAccount
 from src.allocation.domain.entities.contract import Contract
 from src.allocation.domain.entities.measurement import Measurement, MeasurementState
 from src.allocation.domain.entities.supplier import Supplier
 from src.allocation.domain.exceptions import (
     AllocationDomainError,
     ContractNotFoundError,
+    DuplicateAccountCodeError,
     MeasurementNotFoundError,
+)
+from src.allocation.domain.repositories.accounting_account_repository import (
+    AccountingAccountRepository,
 )
 from src.allocation.domain.repositories.contract_repository import (
     ContractRepository,
@@ -21,7 +26,7 @@ from src.allocation.domain.repositories.measurement_repository import (
 from src.allocation.domain.repositories.supplier_repository import (
     SupplierRepository,
 )
-from src.shared.domain.value_objects import Period
+from src.shared.domain.value_objects import AccountCode, Period
 
 
 class InMemorySupplierRepository(SupplierRepository):
@@ -219,3 +224,85 @@ class InMemoryMeasurementRepository(MeasurementRepository):
                 f"Measurement with id {measurement.id} not found."
             )
         self._measurements[measurement.id] = measurement
+
+
+class InMemoryAccountingAccountRepository(AccountingAccountRepository):
+    """In-memory test double implementation for AccountingAccountRepository."""
+
+    def __init__(self) -> None:
+        """Initialize in-memory accounting accounts storage."""
+        self._accounts: dict[UUID, AccountingAccount] = {}
+
+    async def save(self, account: AccountingAccount) -> None:
+        """Persist accounting account ensuring code uniqueness.
+
+        Args:
+            account: Accounting account entity to save.
+        """
+        for existing in self._accounts.values():
+            if existing.id != account.id and existing.code == account.code:
+                raise DuplicateAccountCodeError(
+                    f"Accounting account with code '{account.code}' already exists."
+                )
+        self._accounts[account.id] = account
+
+    async def get_by_id(self, account_id: UUID) -> AccountingAccount | None:
+        """Find accounting account by UUID.
+
+        Args:
+            account_id: Account UUID.
+
+        Returns:
+            AccountingAccount or None.
+        """
+        return self._accounts.get(account_id)
+
+    async def get_by_code(self, code: AccountCode) -> AccountingAccount | None:
+        """Find accounting account by code.
+
+        Args:
+            code: AccountCode value object.
+
+        Returns:
+            AccountingAccount or None.
+        """
+        for account in self._accounts.values():
+            if account.code == code:
+                return account
+        return None
+
+    async def list_all(
+        self,
+        active_only: bool = True,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> list[AccountingAccount]:
+        """List accounting accounts with pagination and active filter.
+
+        Args:
+            active_only: Filter by active status.
+            offset: Items to skip.
+            limit: Maximum items.
+
+        Returns:
+            Paginated list of accounts.
+        """
+        accounts = list(self._accounts.values())
+        if active_only:
+            accounts = [a for a in accounts if a.is_active]
+        accounts.sort(key=lambda a: a.code.value)
+        return accounts[offset : offset + limit]
+
+    async def count(self, active_only: bool = True) -> int:
+        """Count total accounting accounts.
+
+        Args:
+            active_only: Filter by active status.
+
+        Returns:
+            Total count.
+        """
+        if active_only:
+            return sum(1 for a in self._accounts.values() if a.is_active)
+        return len(self._accounts)
+
