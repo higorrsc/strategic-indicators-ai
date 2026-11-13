@@ -31,6 +31,7 @@ The goal of this refactoring is to untangle these concerns, increase cohesion, l
 - **Cohesive Routers:** Split `src/presentation/api/v1/allocation_router.py` into focused sub-routers (`contracts_router.py`, `measurements_router.py`, keeping `accounting_router.py` distinct) and group them cleanly in `api/v1/`.
 - **Modular Models and DTOs:** Split multi-aggregate `models.py` and `dto.py` in `allocation` into subpackages organized by aggregate, preserving public exports via package `__init__.py`.
 - **Modular Seeding Scripts:** Decompose `scripts/seed_ai_data.py` into reusable modules (data definitions vs. execution workflow).
+- **Symmetric Test Suite Organization:** Restructure `tests/` to mirror `src/` 1:1, segregating unit tests into `domain/` and `application/` (`commands/` and `queries/`), and splitting monolithic API test files to match the modular routers.
 - **Zero Regressions:** Ensure all 159 tests pass, Ruff formatting and linting pass with 0 warnings, and Pyrefly passes with 0 typing errors.
 
 ### Non-Goals
@@ -177,6 +178,80 @@ scripts/
 │   └── runner.py           # Verification, anomaly checking, and executive AI summary execution
 └── seed_ai_data.py         # Thin CLI entry point importing and executing the runner
 ```
+
+### 5.7 Symmetric Test Suite Organization (`tests/`)
+
+To eliminate monolithic test files (e.g. `test_allocation.py`, `test_budgeting.py`, `test_api_allocation.py`) and mirror `src/` 1:1, the test suite is refactored into:
+
+#### Unit Tests (`tests/unit/`)
+Each bounded context mirrors the exact layer and CQRS breakdown of `src/`:
+
+```text
+tests/unit/
+├── budgeting/
+│   ├── domain/
+│   │   ├── test_cost_center.py
+│   │   └── test_budget_target.py
+│   └── application/
+│       ├── commands/
+│       │   ├── test_create_cost_center.py
+│       │   └── test_set_budget_target.py
+│       └── queries/
+│           └── test_get_hierarchy_budget.py
+├── allocation/
+│   ├── domain/
+│   │   ├── test_exact_penny_allocator.py
+│   │   ├── test_contract.py
+│   │   ├── test_measurement.py
+│   │   └── test_accounting_account.py
+│   └── application/
+│       ├── commands/
+│       │   ├── test_register_contract.py
+│       │   ├── test_submit_measurement.py
+│       │   ├── test_approve_measurement.py
+│       │   └── test_register_accounting_account.py
+│       └── queries/
+│           ├── test_list_contracts.py
+│           ├── test_list_measurements.py
+│           ├── test_list_accounting_accounts.py
+│           └── test_get_cost_center_accounting_breakdown.py
+├── indicators/
+│   ├── domain/
+│   │   ├── test_variance_calculator.py
+│   │   ├── test_simulator.py
+│   │   └── test_materiality_analyzer.py
+│   └── application/
+│       └── queries/
+│           ├── test_compute_period_indicators.py
+│           ├── test_simulate_scenario.py
+│           └── test_material_impact.py
+├── intelligence/
+│   ├── domain/
+│   │   ├── test_anomaly_detector.py
+│   │   └── test_cache_domain.py
+│   └── application/
+│       ├── services/
+│       │   └── test_data_fingerprint_service.py
+│       └── queries/
+│           ├── test_analyze_allocation_anomalies.py
+│           └── test_executive_summary_caching.py
+├── presentation/
+│   ├── test_executive_summary_pdf.py
+│   └── test_pagination_links.py
+└── shared/
+    ├── test_settings.py
+    └── test_value_objects.py
+```
+
+#### API Integration Tests (`tests/api/`)
+Split monolithic files to mirror the modularized routers:
+- `test_contracts_api.py`: Tests for `POST /api/v1/contracts`, `GET /api/v1/contracts`, `GET /api/v1/contracts/{id}`.
+- `test_measurements_api.py`: Tests for `POST /api/v1/measurements`, `GET /api/v1/measurements`, `POST /api/v1/measurements/{id}/approve`.
+- `test_accounting_api.py`: Retained and focused on accounting accounts and breakdown endpoints.
+- `test_budgeting_api.py`: Retained for cost centers and budget targets.
+- `test_indicators_api.py`: Focused on period variance calculation and Pareto materiality focus.
+- `test_scenarios_api.py`: Focused on what-if scenario simulations.
+- `test_intelligence_api.py`: Focused on anomaly detection and AI executive summary caching.
 
 ---
 
