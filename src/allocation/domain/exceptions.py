@@ -19,6 +19,14 @@ class MeasurementNotFoundError(AllocationDomainError):
     """Raised when a measurement is not found."""
 
 
+class AccountingAccountNotFoundError(AllocationDomainError):
+    """Raised when an accounting account is not found."""
+
+
+class DuplicateAccountCodeError(AllocationDomainError):
+    """Raised when an accounting account code already exists."""
+
+
 class InvalidAllocationPercentageError(AllocationDomainError):
     """Raised when allocation shares do not equal 100%."""
 
