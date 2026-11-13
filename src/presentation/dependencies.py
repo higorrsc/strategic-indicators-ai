@@ -82,6 +82,9 @@ from src.indicators.application.use_cases.material_impact import (
 from src.indicators.application.use_cases.simulate_scenario import (
     SimulateScenarioUseCase,
 )
+from src.intelligence.application.ports.ai_analysis_cache_repository import (
+    AIAnalysisCacheRepository,
+)
 from src.intelligence.application.ports.ai_port import AIPort
 from src.intelligence.application.use_cases.analyze_allocation_anomalies import (
     AnalyzeAllocationAnomaliesUseCase,
@@ -90,9 +93,14 @@ from src.intelligence.application.use_cases.generate_executive_summary import (
     GenerateExecutiveSummaryUseCase,
 )
 from src.intelligence.infrastructure.pydantic_ai_adapter import PydanticAIAdapter
+from src.intelligence.infrastructure.repositories import (
+    InMemoryAIAnalysisCacheRepository,
+    SqlAlchemyAIAnalysisCacheRepository,
+)
 from src.shared.config.settings import Settings, get_settings
 from src.shared.infrastructure.database.repositories import (
     SessionManagedAccountingAccountRepository,
+    SessionManagedAIAnalysisCacheRepository,
     SessionManagedBudgetRepository,
     SessionManagedContractRepository,
     SessionManagedCostCenterRepository,
@@ -123,6 +131,9 @@ class DependencyContainer:
         self.accounting_account_repo: AccountingAccountRepository = (
             InMemoryAccountingAccountRepository()
         )
+        self.ai_cache_repo: AIAnalysisCacheRepository = (
+            InMemoryAIAnalysisCacheRepository()
+        )
         self.ai_port: AIPort = PydanticAIAdapter(settings=self.settings)
 
     async def init_database(
@@ -149,6 +160,9 @@ class DependencyContainer:
         self.accounting_account_repo = SessionManagedAccountingAccountRepository(
             self.session_factory
         )
+        self.ai_cache_repo = SessionManagedAIAnalysisCacheRepository(
+            self.session_factory
+        )
         self.ai_port = PydanticAIAdapter(settings=self.settings)
 
     async def close_database(self) -> None:
@@ -168,6 +182,7 @@ class DependencyContainer:
             self.contract_repo = InMemoryContractRepository()
             self.measurement_repo = InMemoryMeasurementRepository()
             self.accounting_account_repo = InMemoryAccountingAccountRepository()
+            self.ai_cache_repo = InMemoryAIAnalysisCacheRepository()
         self.ai_port = PydanticAIAdapter(settings=self.settings)
 
 
@@ -314,6 +329,24 @@ def get_accounting_account_repository(
     if container.use_database and session is not None:
         return SqlAlchemyAccountingAccountRepository(session)
     return container.accounting_account_repo
+
+
+def get_ai_analysis_cache_repository(
+    container: Annotated[DependencyContainer, Depends(get_container)],
+    session: Annotated[AsyncSession | None, Depends(get_db_session)] = None,
+) -> AIAnalysisCacheRepository:
+    """Provide AI analysis cache repository.
+
+    Args:
+        container: Dependency container.
+        session: Optional active request session.
+
+    Returns:
+        AIAnalysisCacheRepository: AI analysis cache repository.
+    """
+    if container.use_database and session is not None:
+        return SqlAlchemyAIAnalysisCacheRepository(session)
+    return container.ai_cache_repo
 
 
 def get_ai_port(
@@ -644,6 +677,9 @@ def get_generate_executive_summary_use_case(
         Depends(get_analyze_anomalies_use_case),
     ],
     ai_port: Annotated[AIPort, Depends(get_ai_port)],
+    cache_repo: Annotated[
+        AIAnalysisCacheRepository, Depends(get_ai_analysis_cache_repository)
+    ],
     container: Annotated[DependencyContainer, Depends(get_container)],
 ) -> GenerateExecutiveSummaryUseCase:
     """Provide GenerateExecutiveSummaryUseCase.
@@ -652,6 +688,7 @@ def get_generate_executive_summary_use_case(
         indicators_uc: Indicators use case.
         anomalies_uc: Anomalies use case.
         ai_port: AI port.
+        cache_repo: AI analysis cache repository.
         container: Dependency container.
 
     Returns:
@@ -661,6 +698,7 @@ def get_generate_executive_summary_use_case(
         indicators_use_case=indicators_uc,
         anomalies_use_case=anomalies_uc,
         ai_port=ai_port,
+        cache_repository=cache_repo,
         settings=container.settings,
     )
 

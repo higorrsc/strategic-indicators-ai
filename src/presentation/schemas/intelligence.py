@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -39,3 +40,6 @@ class ExecutiveSummaryResponseSchema(BaseModel):
     is_fallback: bool
     ai_provider: str
     language: str = "pt-br"
+    is_cached: bool = False
+    cache_status: str = "MISS"
+    cached_at: datetime | None = None

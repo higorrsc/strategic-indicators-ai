@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -44,7 +45,7 @@ from src.shared.domain.value_objects import (
 
 
 @pytest_asyncio.fixture
-async def test_setup():
+async def test_setup() -> dict[str, Any]:
     cc_repo = InMemoryCostCenterRepository()
     budget_repo = InMemoryBudgetRepository()
     contract_repo = InMemoryContractRepository()
@@ -143,7 +144,7 @@ async def test_setup():
 
 @pytest.mark.asyncio
 async def test_should_call_ai_on_first_request_and_hit_cache_on_second(
-    test_setup,
+    test_setup: dict[str, Any],
 ) -> None:
     use_case = test_setup["use_case"]
     ai_port = test_setup["ai_port"]
@@ -164,7 +165,9 @@ async def test_should_call_ai_on_first_request_and_hit_cache_on_second(
 
 
 @pytest.mark.asyncio
-async def test_should_force_refresh_when_flag_is_true(test_setup) -> None:
+async def test_should_force_refresh_when_flag_is_true(
+    test_setup: dict[str, Any],
+) -> None:
     use_case = test_setup["use_case"]
     ai_port = test_setup["ai_port"]
     p = test_setup["period"]
@@ -180,7 +183,9 @@ async def test_should_force_refresh_when_flag_is_true(test_setup) -> None:
 
 
 @pytest.mark.asyncio
-async def test_should_invalidate_cache_on_data_drift(test_setup) -> None:
+async def test_should_invalidate_cache_on_data_drift(
+    test_setup: dict[str, Any],
+) -> None:
     use_case = test_setup["use_case"]
     ai_port = test_setup["ai_port"]
     meas_repo = test_setup["meas_repo"]
@@ -218,7 +223,9 @@ async def test_should_invalidate_cache_on_data_drift(test_setup) -> None:
 
 
 @pytest.mark.asyncio
-async def test_should_expire_cache_when_time_past_ttl(test_setup) -> None:
+async def test_should_expire_cache_when_time_past_ttl(
+    test_setup: dict[str, Any],
+) -> None:
     use_case = test_setup["use_case"]
     ai_port = test_setup["ai_port"]
     cache_repo = test_setup["cache_repo"]
@@ -243,7 +250,9 @@ async def test_should_expire_cache_when_time_past_ttl(test_setup) -> None:
 
 
 @pytest.mark.asyncio
-async def test_should_scope_by_cost_center(test_setup) -> None:
+async def test_should_scope_by_cost_center(
+    test_setup: dict[str, Any],
+) -> None:
     use_case = test_setup["use_case"]
     ai_port = test_setup["ai_port"]
     cc1 = test_setup["cc1"]

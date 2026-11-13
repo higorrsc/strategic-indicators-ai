@@ -35,23 +35,47 @@ router = APIRouter(prefix="/api/v1/intelligence", tags=["Strategic Intelligence"
 async def get_executive_summary(
     period: Annotated[str, Query(description="Target period in YYYY-MM format")],
     use_case: GenerateExecutiveSummaryUseCaseDep,
+    response: Response,
     lang: Annotated[
         SupportedLanguage,
         Query(description="Requested language locale: pt-br or en-us"),
     ] = SupportedLanguage.PT_BR,
+    cost_center_id: Annotated[
+        UUID | None,
+        Query(description="Optional scope Cost Center UUID filter"),
+    ] = None,
+    accounting_account_id: Annotated[
+        UUID | None,
+        Query(description="Optional scope Accounting Account UUID filter"),
+    ] = None,
+    force_refresh: Annotated[
+        bool,
+        Query(description="Force re-generation with AI bypassing cache"),
+    ] = False,
 ) -> ExecutiveSummaryResponseSchema:
     """Synthesize period metrics and anomalies via AI with automatic fallback.
 
     Args:
         period: Target fiscal period string.
         use_case: GenerateExecutiveSummaryUseCase dependency.
+        response: FastAPI response object for setting custom headers.
         lang: Requested language locale (default: pt-br).
+        cost_center_id: Optional scope Cost Center UUID filter.
+        accounting_account_id: Optional scope Accounting Account UUID filter.
+        force_refresh: Force AI recalculation.
 
     Returns:
         ExecutiveSummaryResponseSchema: Executive insights report.
     """
     target_period = Period.from_string(period)
-    result = await use_case.execute(target_period, language=lang)
+    result = await use_case.execute(
+        target_period,
+        language=lang,
+        cost_center_id=cost_center_id,
+        accounting_account_id=accounting_account_id,
+        force_refresh=force_refresh,
+    )
+    response.headers["X-Cache-Status"] = result.cache_status.value
 
     return ExecutiveSummaryResponseSchema(
         period=str(result.period),
@@ -97,6 +121,9 @@ async def get_executive_summary(
         is_fallback=result.is_fallback,
         ai_provider=result.ai_provider,
         language=result.language.value,
+        is_cached=result.is_cached,
+        cache_status=result.cache_status.value,
+        cached_at=result.cached_at,
     )
 
 
@@ -123,6 +150,18 @@ async def download_executive_summary_pdf(
         SupportedLanguage,
         Query(description="Requested language locale: pt-br or en-us"),
     ] = SupportedLanguage.PT_BR,
+    cost_center_id: Annotated[
+        UUID | None,
+        Query(description="Optional scope Cost Center UUID filter"),
+    ] = None,
+    accounting_account_id: Annotated[
+        UUID | None,
+        Query(description="Optional scope Accounting Account UUID filter"),
+    ] = None,
+    force_refresh: Annotated[
+        bool,
+        Query(description="Force re-generation with AI bypassing cache"),
+    ] = False,
 ) -> Response:
     """Generate and stream a publication-ready PDF executive report.
 
@@ -130,12 +169,21 @@ async def download_executive_summary_pdf(
         period: Target fiscal period string (YYYY-MM).
         use_case: GenerateExecutiveSummaryUseCase dependency.
         lang: Desired report language (default: pt-br).
+        cost_center_id: Optional scope Cost Center UUID filter.
+        accounting_account_id: Optional scope Accounting Account UUID filter.
+        force_refresh: Force AI recalculation.
 
     Returns:
         Response: Streaming binary PDF with attachment content-disposition.
     """
     target_period = Period.from_string(period)
-    result = await use_case.execute(target_period, language=lang)
+    result = await use_case.execute(
+        target_period,
+        language=lang,
+        cost_center_id=cost_center_id,
+        accounting_account_id=accounting_account_id,
+        force_refresh=force_refresh,
+    )
     pdf_bytes = ExecutiveSummaryPDFBuilder().build(result, language=lang)
 
     filename = (
@@ -145,6 +193,7 @@ async def download_executive_summary_pdf(
     )
     headers = {
         "Content-Disposition": f'attachment; filename="{filename}"',
+        "X-Cache-Status": result.cache_status.value,
     }
     return Response(
         content=pdf_bytes,
