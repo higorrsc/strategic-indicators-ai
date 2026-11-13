@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from src.intelligence.application.ports.ai_analysis_cache_repository import (
-    AIAnalysisCacheRepository,
-)
 from src.intelligence.domain.cache import AIAnalysisCache
+from src.intelligence.domain.repositories import AIAnalysisCacheRepository
 
 
 class InMemoryAIAnalysisCacheRepository(AIAnalysisCacheRepository):

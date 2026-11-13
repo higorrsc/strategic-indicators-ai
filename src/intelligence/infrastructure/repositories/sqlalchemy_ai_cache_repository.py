@@ -7,10 +7,8 @@ from datetime import UTC
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.intelligence.application.ports.ai_analysis_cache_repository import (
-    AIAnalysisCacheRepository,
-)
 from src.intelligence.domain.cache import AIAnalysisCache
+from src.intelligence.domain.repositories import AIAnalysisCacheRepository
 from src.intelligence.infrastructure.database.models import AIAnalysisCacheModel
 from src.shared.domain.value_objects import Period, SupportedLanguage
 

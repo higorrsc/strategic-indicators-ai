@@ -12,9 +12,6 @@ from src.indicators.application.use_cases.queries import (
 )
 from src.indicators.domain.models import CostCenterIndicator, IndicatorStatus
 from src.intelligence.application.dto import AnomalyDTO, ExecutiveSummaryDTO
-from src.intelligence.application.ports.ai_analysis_cache_repository import (
-    AIAnalysisCacheRepository,
-)
 from src.intelligence.application.ports.ai_port import AIPort
 from src.intelligence.application.services.data_fingerprint_service import (
     compute_intelligence_data_hash,
@@ -25,6 +22,7 @@ from src.intelligence.domain.models import (
     AnomalySeverity,
     AnomalyType,
 )
+from src.intelligence.domain.repositories import AIAnalysisCacheRepository
 from src.shared.config.settings import Settings, get_settings
 from src.shared.domain.value_objects import (
     Money,

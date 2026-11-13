@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.intelligence.application.ports.ai_analysis_cache_repository import (
-    AIAnalysisCacheRepository,
-)
 from src.intelligence.domain.cache import AIAnalysisCache
+from src.intelligence.domain.repositories import AIAnalysisCacheRepository
 
 from .sqlalchemy_ai_cache_repository import (
     SqlAlchemyAIAnalysisCacheRepository,

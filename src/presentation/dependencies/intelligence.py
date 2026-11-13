@@ -13,14 +13,12 @@ from src.allocation.domain.repositories.measurement_repository import (
 from src.indicators.application.use_cases.queries import (
     ComputePeriodIndicatorsUseCase,
 )
-from src.intelligence.application.ports.ai_analysis_cache_repository import (
-    AIAnalysisCacheRepository,
-)
 from src.intelligence.application.ports.ai_port import AIPort
 from src.intelligence.application.use_cases.queries import (
     AnalyzeAllocationAnomaliesUseCase,
     GenerateExecutiveSummaryUseCase,
 )
+from src.intelligence.domain.repositories import AIAnalysisCacheRepository
 from src.intelligence.infrastructure.repositories import (
     SqlAlchemyAIAnalysisCacheRepository,
 )
