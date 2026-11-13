@@ -1,1 +1,1 @@
-"""Budget indicators application layer package."""
+"""Indicators application layer."""

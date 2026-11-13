@@ -1,0 +1,203 @@
+"""Session-managed cost allocation repository wrappers."""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from src.allocation.domain.entities.accounting_account import AccountingAccount
+from src.allocation.domain.entities.contract import Contract
+from src.allocation.domain.entities.measurement import (
+    Measurement,
+    MeasurementState,
+)
+from src.allocation.domain.entities.supplier import Supplier
+from src.allocation.domain.repositories.accounting_account_repository import (
+    AccountingAccountRepository,
+)
+from src.allocation.domain.repositories.contract_repository import (
+    ContractRepository,
+)
+from src.allocation.domain.repositories.measurement_repository import (
+    MeasurementRepository,
+)
+from src.allocation.domain.repositories.supplier_repository import (
+    SupplierRepository,
+)
+from src.shared.domain.value_objects import AccountCode, Period
+
+from .sqlalchemy_allocation_repository import (
+    SqlAlchemyAccountingAccountRepository,
+    SqlAlchemyContractRepository,
+    SqlAlchemyMeasurementRepository,
+    SqlAlchemySupplierRepository,
+)
+
+
+class SessionManagedSupplierRepository(SupplierRepository):
+    """SupplierRepository wrapper that executes each operation in a session."""
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+        """Initialize with an async session factory."""
+        self._session_factory = session_factory
+
+    async def add(self, supplier: Supplier) -> None:
+        """Persist supplier and commit transaction."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemySupplierRepository(session)
+            await repo.add(supplier)
+            await session.commit()
+
+    async def get_by_id(self, supplier_id: UUID) -> Supplier | None:
+        """Find supplier by id."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemySupplierRepository(session)
+            return await repo.get_by_id(supplier_id)
+
+    async def list_all(self) -> list[Supplier]:
+        """List all suppliers."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemySupplierRepository(session)
+            return await repo.list_all()
+
+
+class SessionManagedContractRepository(ContractRepository):
+    """ContractRepository wrapper that executes each operation in a session."""
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+        """Initialize with an async session factory."""
+        self._session_factory = session_factory
+
+    async def add(self, contract: Contract) -> None:
+        """Persist contract and commit transaction."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyContractRepository(session)
+            await repo.add(contract)
+            await session.commit()
+
+    async def get_by_id(self, contract_id: UUID) -> Contract | None:
+        """Find contract by id."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyContractRepository(session)
+            return await repo.get_by_id(contract_id)
+
+    async def get_by_code(self, code: str) -> Contract | None:
+        """Find contract by code."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyContractRepository(session)
+            return await repo.get_by_code(code)
+
+    async def list_all(self, active_only: bool = True) -> list[Contract]:
+        """List all contracts."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyContractRepository(session)
+            return await repo.list_all(active_only=active_only)
+
+    async def update(self, contract: Contract) -> None:
+        """Update contract and commit transaction."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyContractRepository(session)
+            await repo.update(contract)
+            await session.commit()
+
+
+class SessionManagedMeasurementRepository(MeasurementRepository):
+    """MeasurementRepository wrapper that executes each operation in a session."""
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+        """Initialize with an async session factory."""
+        self._session_factory = session_factory
+
+    async def add(self, measurement: Measurement) -> None:
+        """Persist measurement and commit transaction."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyMeasurementRepository(session)
+            await repo.add(measurement)
+            await session.commit()
+
+    async def get_by_id(self, measurement_id: UUID) -> Measurement | None:
+        """Find measurement by id."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyMeasurementRepository(session)
+            return await repo.get_by_id(measurement_id)
+
+    async def list_by_period(
+        self, period: Period, state: MeasurementState | None = None
+    ) -> list[Measurement]:
+        """List measurements by period and state."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyMeasurementRepository(session)
+            return await repo.list_by_period(period, state=state)
+
+    async def list_by_contract(self, contract_id: UUID) -> list[Measurement]:
+        """List measurements by contract."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyMeasurementRepository(session)
+            return await repo.list_by_contract(contract_id)
+
+    async def find(
+        self,
+        period: Period | None = None,
+        contract_id: UUID | None = None,
+        state: MeasurementState | None = None,
+    ) -> list[Measurement]:
+        """Find measurements matching optional criteria."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyMeasurementRepository(session)
+            return await repo.find(period=period, contract_id=contract_id, state=state)
+
+    async def update(self, measurement: Measurement) -> None:
+        """Update measurement and commit transaction."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyMeasurementRepository(session)
+            await repo.update(measurement)
+            await session.commit()
+
+
+class SessionManagedAccountingAccountRepository(AccountingAccountRepository):
+    """AccountingAccountRepository wrapper that executes operations in a session."""
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+        """Initialize with an async session factory."""
+        self._session_factory = session_factory
+
+    async def save(self, account: AccountingAccount) -> None:
+        """Persist accounting account and commit transaction."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            await repo.save(account)
+            await session.commit()
+
+    async def get_by_id(self, account_id: UUID) -> AccountingAccount | None:
+        """Find accounting account by id."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            return await repo.get_by_id(account_id)
+
+    async def get_by_code(self, code: AccountCode) -> AccountingAccount | None:
+        """Find accounting account by code."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            return await repo.get_by_code(code)
+
+    async def list_all(
+        self,
+        active_only: bool = True,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> list[AccountingAccount]:
+        """List accounting accounts with pagination."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            return await repo.list_all(
+                active_only=active_only,
+                offset=offset,
+                limit=limit,
+            )
+
+    async def count(self, active_only: bool = True) -> int:
+        """Count total accounting accounts."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            return await repo.count(active_only=active_only)

@@ -9,10 +9,11 @@ from fastapi import FastAPI
 
 from src.presentation.api.v1 import (
     accounting_router,
-    allocation_router,
     budgeting_router,
+    contracts_router,
     indicators_router,
     intelligence_router,
+    measurements_router,
 )
 from src.presentation.dependencies import get_container
 from src.presentation.exception_handlers import register_exception_handlers
@@ -61,7 +62,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok", "app": app_settings.APP_NAME}
 
     app.include_router(budgeting_router)
-    app.include_router(allocation_router)
+    app.include_router(contracts_router)
+    app.include_router(measurements_router)
     app.include_router(accounting_router)
     app.include_router(indicators_router)
     app.include_router(intelligence_router)

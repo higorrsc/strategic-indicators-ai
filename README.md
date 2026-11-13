@@ -182,7 +182,7 @@ The persistence architecture follows Clean Architecture boundaries:
 
 - **Isolated ORM Models**: SQLAlchemy models reside strictly inside `src/<context>/infrastructure/database/models.py`. Domain entities never inherit from SQLAlchemy or know about the database schema.
 - **Asynchronous Repositories**: Repository implementations leverage SQLAlchemy's async session (`AsyncSession`) and explicit transactions.
-- **Session-Managed Facade**: [`SessionManaged*Repository`](src/shared/infrastructure/database/repositories.py) manages the async session lifecycle for presentation use cases and background tasks.
+- **Session-Managed Facades**: `SessionManaged*Repository` implementations in each bounded context infrastructure package manage the async session lifecycle for presentation use cases and background tasks.
 - **Bounded Context Independence**: Relational foreign keys are strictly internal to each bounded context. Cross-context references (such as `cost_center_id` in allocations) are indexed UUID columns without cross-table foreign key constraints.
 - **Multi-Database Support**:
   - **PostgreSQL**: Production and containerized environment via `postgresql+asyncpg://`.

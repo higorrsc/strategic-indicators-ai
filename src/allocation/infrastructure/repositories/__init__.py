@@ -6,6 +6,12 @@ from .in_memory_allocation_repository import (
     InMemoryMeasurementRepository,
     InMemorySupplierRepository,
 )
+from .session_managed import (
+    SessionManagedAccountingAccountRepository,
+    SessionManagedContractRepository,
+    SessionManagedMeasurementRepository,
+    SessionManagedSupplierRepository,
+)
 from .sqlalchemy_allocation_repository import (
     SqlAlchemyAccountingAccountRepository,
     SqlAlchemyContractRepository,
@@ -18,6 +24,10 @@ __all__ = [
     "InMemoryContractRepository",
     "InMemoryMeasurementRepository",
     "InMemorySupplierRepository",
+    "SessionManagedAccountingAccountRepository",
+    "SessionManagedContractRepository",
+    "SessionManagedMeasurementRepository",
+    "SessionManagedSupplierRepository",
     "SqlAlchemyAccountingAccountRepository",
     "SqlAlchemyContractRepository",
     "SqlAlchemyMeasurementRepository",
