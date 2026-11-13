@@ -33,10 +33,8 @@ from src.indicators.application.use_cases.queries import (
     ComputePeriodIndicatorsUseCase,
 )
 from src.intelligence.application.dto import ExecutiveSummaryDTO
-from src.intelligence.application.use_cases.analyze_allocation_anomalies import (
+from src.intelligence.application.use_cases.queries import (
     AnalyzeAllocationAnomaliesUseCase,
-)
-from src.intelligence.application.use_cases.generate_executive_summary import (
     GenerateExecutiveSummaryUseCase,
 )
 from src.presentation.dependencies import DependencyContainer

@@ -19,9 +19,6 @@ from src.intelligence.application.ports.ai_port import AIPort
 from src.intelligence.application.services.data_fingerprint_service import (
     compute_intelligence_data_hash,
 )
-from src.intelligence.application.use_cases.analyze_allocation_anomalies import (
-    AnalyzeAllocationAnomaliesUseCase,
-)
 from src.intelligence.domain.cache import AIAnalysisCache, CacheStatus
 from src.intelligence.domain.exceptions import AIProviderError
 from src.intelligence.domain.models import (
@@ -34,6 +31,10 @@ from src.shared.domain.value_objects import (
     Percentage,
     Period,
     SupportedLanguage,
+)
+
+from .analyze_allocation_anomalies import (
+    AnalyzeAllocationAnomaliesUseCase,
 )
 
 

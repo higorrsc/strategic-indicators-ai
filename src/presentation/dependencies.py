@@ -68,10 +68,8 @@ from src.intelligence.application.ports.ai_analysis_cache_repository import (
     AIAnalysisCacheRepository,
 )
 from src.intelligence.application.ports.ai_port import AIPort
-from src.intelligence.application.use_cases.analyze_allocation_anomalies import (
+from src.intelligence.application.use_cases.queries import (
     AnalyzeAllocationAnomaliesUseCase,
-)
-from src.intelligence.application.use_cases.generate_executive_summary import (
     GenerateExecutiveSummaryUseCase,
 )
 from src.intelligence.infrastructure.pydantic_ai_adapter import PydanticAIAdapter
