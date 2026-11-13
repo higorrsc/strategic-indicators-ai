@@ -38,3 +38,4 @@ class ExecutiveSummaryResponseSchema(BaseModel):
     indicators_summary: PeriodIndicatorsResponse
     is_fallback: bool
     ai_provider: str
+    language: str = "pt-br"
