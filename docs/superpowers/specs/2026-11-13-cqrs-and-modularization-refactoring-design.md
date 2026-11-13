@@ -86,21 +86,26 @@ src/budgeting/application/
 │   └── get_hierarchy_budget.py
 └── use_cases/   # Re-exports commands and queries for full backward compatibility
     ├── __init__.py
-    ├── create_cost_center.py -> points/imports from commands
-    ├── set_budget_target.py -> points/imports from commands
-    └── get_hierarchy_budget.py -> points/imports from queries
+    ├── create_cost_center.py  # Re-export shim pointing to commands.create_cost_center
+    ├── set_budget_target.py   # Re-export shim pointing to commands.set_budget_target
+    └── get_hierarchy_budget.py # Re-export shim pointing to queries.get_hierarchy_budget
 ```
+
+*Note on Backward Compatibility:* Individual file shims in `use_cases/` alongside `use_cases/__init__.py` re-export all use cases. Routers and presentation are updated to import from `commands/` and `queries/`, while legacy test references remain completely unbroken.
 
 Same structure for:
 - `src/allocation/application/`:
   - `commands/`: `register_accounting_account.py`, `register_contract.py`, `submit_measurement.py`, `approve_measurement.py`
   - `queries/`: `list_accounting_accounts.py`, `list_contracts.py`, `list_measurements.py`, `get_cost_center_accounting_breakdown.py`
+  - `use_cases/`: Re-exports all commands and queries.
 - `src/indicators/application/`:
-  - `commands/`: *(none - indicators is currently a query/simulation context)*
+  - `commands/`: *(none - indicators is a query/simulation context)*
   - `queries/`: `compute_period_indicators.py`, `material_impact.py`, `simulate_scenario.py`
+  - `use_cases/`: Re-exports all queries.
 - `src/intelligence/application/`:
   - `commands/`: *(none - caching is handled inside orchestration)*
   - `queries/`: `analyze_allocation_anomalies.py`, `generate_executive_summary.py`
+  - `use_cases/`: Re-exports all queries.
 
 ### 5.2 Allocation Models and DTOs Modularization
 
@@ -113,11 +118,12 @@ src/allocation/infrastructure/database/models/
 ├── measurement.py
 └── accounting_account.py
 ```
+*Note on Alembic Discovery:* `models/__init__.py` explicitly imports all model submodules, ensuring that `migrations/env.py` and SQLAlchemy's `Base.metadata` automatically discover and register all tables identically with zero schema drift.
 
 Convert `src/allocation/application/dto.py` into a package:
 ```text
 src/allocation/application/dto/
-├── __init__.py             # Exports all DTOs
+├── __init__.py             # Exports all DTOs for complete backward compatibility
 ├── supplier.py
 ├── contract.py
 ├── measurement.py
@@ -137,14 +143,15 @@ Split `src/presentation/api/v1/allocation_router.py` into:
 Decompose `src/presentation/dependencies.py` (771 lines) into:
 ```text
 src/presentation/dependencies/
-├── __init__.py             # Exposes get_container, set_container, DependencyContainer, etc.
-├── container.py            # Facade DependencyContainer aggregating context modules
+├── __init__.py             # Exposes get_container, set_container, reset_container, DependencyContainer
+├── container.py            # Facade DependencyContainer preserving all existing properties/attributes
 ├── budgeting.py            # Budgeting repositories, session wrappers, and use cases
 ├── allocation.py           # Allocation repositories, session wrappers, and use cases
 ├── indicators.py           # Indicators services and use cases
 ├── intelligence.py         # Intelligence repositories, AI ports, and use cases
 └── database.py             # Database engine, session factory, and initialization lifecycle
 ```
+*Note on Facade Design:* The `DependencyContainer` facade preserves all public property names (`container.create_cost_center_use_case`, `container.allocation_repository`, `container.ai_port`, etc.) by delegating to the context providers. This guarantees that all unit, integration, and BDD tests interact with `get_container()` and test doubles (`container.ai_port = FakeAIPort()`) with 100% backward compatibility.
 
 ### 5.5 Co-Location of Session-Managed Repositories
 
