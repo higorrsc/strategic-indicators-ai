@@ -22,7 +22,7 @@ from src.presentation.schemas.intelligence import (
     AnomalyResponse,
     ExecutiveSummaryResponseSchema,
 )
-from src.shared.domain.value_objects import Period
+from src.shared.domain.value_objects import Period, SupportedLanguage
 
 router = APIRouter(prefix="/api/v1/intelligence", tags=["Strategic Intelligence"])
 
@@ -35,18 +35,23 @@ router = APIRouter(prefix="/api/v1/intelligence", tags=["Strategic Intelligence"
 async def get_executive_summary(
     period: Annotated[str, Query(description="Target period in YYYY-MM format")],
     use_case: GenerateExecutiveSummaryUseCaseDep,
+    lang: Annotated[
+        SupportedLanguage,
+        Query(description="Requested language locale: pt-br or en-us"),
+    ] = SupportedLanguage.PT_BR,
 ) -> ExecutiveSummaryResponseSchema:
     """Synthesize period metrics and anomalies via AI with automatic fallback.
 
     Args:
         period: Target fiscal period string.
         use_case: GenerateExecutiveSummaryUseCase dependency.
+        lang: Requested language locale (default: pt-br).
 
     Returns:
         ExecutiveSummaryResponseSchema: Executive insights report.
     """
     target_period = Period.from_string(period)
-    result = await use_case.execute(target_period)
+    result = await use_case.execute(target_period, language=lang)
 
     return ExecutiveSummaryResponseSchema(
         period=str(result.period),
@@ -91,6 +96,7 @@ async def get_executive_summary(
         ),
         is_fallback=result.is_fallback,
         ai_provider=result.ai_provider,
+        language=result.language.value,
     )
 
 
@@ -113,21 +119,30 @@ async def download_executive_summary_pdf(
         ),
     ],
     use_case: GenerateExecutiveSummaryUseCaseDep,
+    lang: Annotated[
+        SupportedLanguage,
+        Query(description="Requested language locale: pt-br or en-us"),
+    ] = SupportedLanguage.PT_BR,
 ) -> Response:
     """Generate and stream a publication-ready PDF executive report.
 
     Args:
         period: Target fiscal period string (YYYY-MM).
         use_case: GenerateExecutiveSummaryUseCase dependency.
+        lang: Desired report language (default: pt-br).
 
     Returns:
         Response: Streaming binary PDF with attachment content-disposition.
     """
     target_period = Period.from_string(period)
-    result = await use_case.execute(target_period)
-    pdf_bytes = ExecutiveSummaryPDFBuilder().build(result)
+    result = await use_case.execute(target_period, language=lang)
+    pdf_bytes = ExecutiveSummaryPDFBuilder().build(result, language=lang)
 
-    filename = f"executive-summary-{period}.pdf"
+    filename = (
+        f"sumario-executivo-{period}-pt-br.pdf"
+        if lang == SupportedLanguage.PT_BR
+        else f"executive-summary-{period}-en-us.pdf"
+    )
     headers = {
         "Content-Disposition": f'attachment; filename="{filename}"',
     }

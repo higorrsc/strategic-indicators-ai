@@ -12,7 +12,7 @@ from src.intelligence.domain.models import (
     AnomalySeverity,
     AnomalyType,
 )
-from src.shared.domain.value_objects import Period
+from src.shared.domain.value_objects import Period, SupportedLanguage
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +69,7 @@ class ExecutiveSummaryDTO:
     indicators_summary: PeriodIndicatorsDTO
     is_fallback: bool = False
     ai_provider: str = "fake"
+    language: SupportedLanguage = SupportedLanguage.PT_BR
 
 
 @dataclass(frozen=True, slots=True)

@@ -99,7 +99,8 @@ async def test_should_compute_indicators_and_simulate_scenario(
     assert sim_data["impacts"][0]["new_overrun"] is True
     assert sim_data["impacts"][0]["simulated_actual"] == "52500.00"
 
-    # 3. Request AI Executive Summary
+    # 3. Request AI Executive Summary (default pt-br, explicit en-us,
+    # and rejection of invalid)
     resp_summary = await client.get(
         "/api/v1/intelligence/executive-summary?period=2026-03"
     )
@@ -107,28 +108,58 @@ async def test_should_compute_indicators_and_simulate_scenario(
     summary_data = resp_summary.json()
     assert summary_data["period"] == "2026-03"
     assert summary_data["financial_health_status"] == "HEALTHY"
+    assert summary_data["language"] == "pt-br"
+    assert "execução orçamentária equilibrada" in summary_data["executive_summary"]
     assert len(summary_data["strategic_recommendations"]) >= 1
+
+    resp_summary_en = await client.get(
+        "/api/v1/intelligence/executive-summary?period=2026-03&lang=en-us"
+    )
+    assert resp_summary_en.status_code == 200
+    summary_en = resp_summary_en.json()
+    assert summary_en["language"] == "en-us"
+    assert "balanced budget execution" in summary_en["executive_summary"]
+
+    resp_summary_invalid = await client.get(
+        "/api/v1/intelligence/executive-summary?period=2026-03&lang=fr-fr"
+    )
+    assert resp_summary_invalid.status_code == 422
 
     # 4. Check anomalies endpoint
     resp_anomalies = await client.get(f"/api/v1/intelligence/anomalies/{m_id}")
     assert resp_anomalies.status_code == 200
     assert isinstance(resp_anomalies.json(), list)
 
-    # 5. Download Executive Summary PDF
-    resp_pdf = await client.get(
+    # 5. Download Executive Summary PDF (default pt-br and explicit en-us)
+    resp_pdf_pt = await client.get(
         "/api/v1/intelligence/executive-summary/pdf?period=2026-03"
     )
-    assert resp_pdf.status_code == 200
-    assert resp_pdf.headers["content-type"] == "application/pdf"
+    assert resp_pdf_pt.status_code == 200
+    assert resp_pdf_pt.headers["content-type"] == "application/pdf"
     assert (
-        'attachment; filename="executive-summary-2026-03.pdf"'
-        in resp_pdf.headers["content-disposition"]
+        'attachment; filename="sumario-executivo-2026-03-pt-br.pdf"'
+        in resp_pdf_pt.headers["content-disposition"]
     )
-    assert resp_pdf.content.startswith(b"%PDF")
-    assert len(resp_pdf.content) > 1000
+    assert resp_pdf_pt.content.startswith(b"%PDF")
+    assert len(resp_pdf_pt.content) > 1000
 
-    # 6. Reject invalid period format for PDF download
+    resp_pdf_en = await client.get(
+        "/api/v1/intelligence/executive-summary/pdf?period=2026-03&lang=en-us"
+    )
+    assert resp_pdf_en.status_code == 200
+    assert (
+        'attachment; filename="executive-summary-2026-03-en-us.pdf"'
+        in resp_pdf_en.headers["content-disposition"]
+    )
+    assert resp_pdf_en.content.startswith(b"%PDF")
+
+    # 6. Reject invalid period format and invalid language for PDF download
     resp_invalid_pdf = await client.get(
         "/api/v1/intelligence/executive-summary/pdf?period=2026-13"
     )
     assert resp_invalid_pdf.status_code == 422
+
+    resp_invalid_pdf_lang = await client.get(
+        "/api/v1/intelligence/executive-summary/pdf?period=2026-03&lang=es-es"
+    )
+    assert resp_invalid_pdf_lang.status_code == 422

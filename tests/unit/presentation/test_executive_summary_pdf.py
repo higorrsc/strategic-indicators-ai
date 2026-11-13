@@ -17,7 +17,7 @@ from src.intelligence.domain.models import AnomalySeverity, AnomalyType
 from src.presentation.reports.executive_summary_pdf import (
     ExecutiveSummaryPDFBuilder,
 )
-from src.shared.domain.value_objects import Period
+from src.shared.domain.value_objects import Period, SupportedLanguage
 
 
 def _sample_indicators() -> PeriodIndicatorsDTO:
@@ -166,3 +166,47 @@ def test_should_generate_pdf_with_fallback_advisory_banner() -> None:
     assert isinstance(pdf_bytes, bytes)
     assert pdf_bytes.startswith(b"%PDF")
     assert len(pdf_bytes) > 1500
+
+
+def test_should_generate_pdf_in_portuguese_and_english() -> None:
+    builder = ExecutiveSummaryPDFBuilder()
+    dto_pt = ExecutiveSummaryDTO(
+        period=Period(2026, 3),
+        financial_health_status="CRITICAL_OVERRUN",
+        executive_summary="Síntese executiva destacando estouro de custos em nuvem.",
+        root_causes=["Aumento imprevisto de capacidade computacional em março."],
+        strategic_recommendations=["Renegociar contratos escalonados da AWS."],
+        anomalies=[],
+        indicators_summary=_sample_indicators(),
+        is_fallback=False,
+        ai_provider="ollama",
+        language=SupportedLanguage.PT_BR,
+    )
+
+    pdf_pt = builder.build(dto_pt)
+    assert isinstance(pdf_pt, bytes)
+    assert pdf_pt.startswith(b"%PDF")
+    assert len(pdf_pt) > 1500
+
+    dto_en = ExecutiveSummaryDTO(
+        period=Period(2026, 3),
+        financial_health_status="CRITICAL_OVERRUN",
+        executive_summary="Executive synthesis highlighting cloud computing overruns.",
+        root_causes=["Unplanned compute capacity surge in March."],
+        strategic_recommendations=["Renegotiate tiered AWS commitments."],
+        anomalies=[],
+        indicators_summary=_sample_indicators(),
+        is_fallback=False,
+        ai_provider="ollama",
+        language=SupportedLanguage.EN_US,
+    )
+
+    pdf_en = builder.build(dto_en)
+    assert isinstance(pdf_en, bytes)
+    assert pdf_en.startswith(b"%PDF")
+    assert len(pdf_en) > 1500
+
+    # Test language override parameter
+    pdf_override = builder.build(dto_pt, language=SupportedLanguage.EN_US)
+    assert isinstance(pdf_override, bytes)
+    assert pdf_override.startswith(b"%PDF")

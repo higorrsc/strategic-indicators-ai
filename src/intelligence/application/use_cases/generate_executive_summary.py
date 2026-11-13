@@ -12,7 +12,12 @@ from src.intelligence.application.use_cases.analyze_allocation_anomalies import 
 )
 from src.intelligence.domain.exceptions import AIProviderError
 from src.shared.config.settings import Settings, get_settings
-from src.shared.domain.value_objects import Money, Percentage, Period
+from src.shared.domain.value_objects import (
+    Money,
+    Percentage,
+    Period,
+    SupportedLanguage,
+)
 
 
 class GenerateExecutiveSummaryUseCase:
@@ -38,11 +43,16 @@ class GenerateExecutiveSummaryUseCase:
         self._ai_port = ai_port
         self._settings = settings or get_settings()
 
-    async def execute(self, period: Period) -> ExecutiveSummaryDTO:
+    async def execute(
+        self,
+        period: Period,
+        language: SupportedLanguage = SupportedLanguage.PT_BR,
+    ) -> ExecutiveSummaryDTO:
         """Generate comprehensive executive report for the given period.
 
         Args:
             period: Target fiscal period.
+            language: Desired language locale (default: pt-br).
 
         Returns:
             ExecutiveSummaryDTO: Consolidated report with deterministic and AI insights.
@@ -71,6 +81,7 @@ class GenerateExecutiveSummaryUseCase:
                 indicators=domain_indicators,
                 anomalies=domain_anomalies,
                 period=period,
+                language=language,
             )
             return ExecutiveSummaryDTO(
                 period=period,
@@ -82,6 +93,7 @@ class GenerateExecutiveSummaryUseCase:
                 indicators_summary=indicators_summary,
                 is_fallback=False,
                 ai_provider=self._settings.AI_PROVIDER,
+                language=language,
             )
         except AIProviderError as err:
             import logging
@@ -95,37 +107,75 @@ class GenerateExecutiveSummaryUseCase:
                 for i in indicators_summary.indicators
                 if i.status != IndicatorStatus.NORMAL.value
             ]
-            root_causes = [
-                f"Cost center {i.cost_center_code} exceeded threshold: "
-                f"execution rate {i.execution_rate}%."
-                for i in overruns
-            ]
-            if domain_anomalies:
-                root_causes.extend(
-                    f"{a.anomaly_type.value}: {a.description}" for a in domain_anomalies
-                )
-            if not root_causes:
-                root_causes.append("All cost centers operated within budget limits.")
 
-            summary_text = (
-                f"Executive report for period {period} generated via "
-                f"deterministic fallback.\n"
-                f"Planned: {indicators_summary.total_budgeted}, "
-                f"Actual: {indicators_summary.total_actual}, "
-                f"Variance: {indicators_summary.total_variance}."
-            )
+            if language == SupportedLanguage.PT_BR:
+                root_causes = [
+                    f"Centro de custo {i.cost_center_code} excedeu o limite: "
+                    f"taxa de execução {i.execution_rate}%."
+                    for i in overruns
+                ]
+                if domain_anomalies:
+                    root_causes.extend(
+                        f"{a.anomaly_type.value}: {a.description}"
+                        for a in domain_anomalies
+                    )
+                if not root_causes:
+                    root_causes.append(
+                        "Todos os centros de custo operaram dentro dos limites "
+                        "orçamentários."
+                    )
+
+                summary_text = (
+                    f"Relatório executivo para o período {period} gerado via "
+                    f"fallback determinístico.\n"
+                    f"Planejado: {indicators_summary.total_budgeted}, "
+                    f"Realizado: {indicators_summary.total_actual}, "
+                    f"Variação: {indicators_summary.total_variance}."
+                )
+                recommendations = [
+                    "Realizar auditoria operacional nos centros de custo "
+                    "com estouro orçamentário.",
+                    "Revisar desvios de alocação de custos sinalizados.",
+                ]
+                health_status = "INDISPONÍVEL (FALLBACK DE IA)"
+            else:
+                root_causes = [
+                    f"Cost center {i.cost_center_code} exceeded threshold: "
+                    f"execution rate {i.execution_rate}%."
+                    for i in overruns
+                ]
+                if domain_anomalies:
+                    root_causes.extend(
+                        f"{a.anomaly_type.value}: {a.description}"
+                        for a in domain_anomalies
+                    )
+                if not root_causes:
+                    root_causes.append(
+                        "All cost centers operated within budget limits."
+                    )
+
+                summary_text = (
+                    f"Executive report for period {period} generated via "
+                    f"deterministic fallback.\n"
+                    f"Planned: {indicators_summary.total_budgeted}, "
+                    f"Actual: {indicators_summary.total_actual}, "
+                    f"Variance: {indicators_summary.total_variance}."
+                )
+                recommendations = [
+                    "Conduct operational audit of over-budget cost centers.",
+                    "Review flagged cost allocation shifts.",
+                ]
+                health_status = "UNAVAILABLE (AI FALLBACK)"
 
             return ExecutiveSummaryDTO(
                 period=period,
-                financial_health_status="UNAVAILABLE (AI FALLBACK)",
+                financial_health_status=health_status,
                 executive_summary=summary_text,
                 root_causes=root_causes,
-                strategic_recommendations=[
-                    "Conduct operational audit of over-budget cost centers.",
-                    "Review flagged cost allocation shifts.",
-                ],
+                strategic_recommendations=recommendations,
                 anomalies=anomaly_dtos,
                 indicators_summary=indicators_summary,
                 is_fallback=True,
                 ai_provider=self._settings.AI_PROVIDER,
+                language=language,
             )

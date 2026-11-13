@@ -54,6 +54,7 @@ from src.shared.domain.value_objects import (
     Money,
     Percentage,
     Period,
+    SupportedLanguage,
 )
 
 
@@ -65,6 +66,7 @@ class FailingAIPort(FakeAIPort):
         indicators: list[CostCenterIndicator],
         anomalies: list[AllocationAnomaly],
         period: Period,
+        language: SupportedLanguage = SupportedLanguage.PT_BR,
     ) -> ExecutiveSummaryResponse:
         """Simulate an AI provider failure.
 
@@ -298,24 +300,35 @@ def test_should_detect_budget_dumping_to_relieve_overrun_center() -> None:
 
 @pytest.mark.asyncio
 async def test_should_generate_fake_ai_summary_for_healthy_period() -> None:
-    """Verify that fake AI port returns a healthy structured summary."""
+    """Verify that fake AI port returns a healthy structured summary in PT and EN."""
     fake_ai = FakeAIPort()
     period = Period(2026, 3)
 
-    response = await fake_ai.generate_executive_summary(
+    # Default (PT-BR)
+    response_pt = await fake_ai.generate_executive_summary(
         indicators=[],
         anomalies=[],
         period=period,
     )
+    assert response_pt.financial_health_status == "HEALTHY"
+    assert "execução orçamentária equilibrada" in response_pt.executive_summary
+    assert len(response_pt.strategic_recommendations) >= 1
 
-    assert response.financial_health_status == "HEALTHY"
-    assert "balanced budget execution" in response.executive_summary
-    assert len(response.strategic_recommendations) >= 1
+    # Explicit EN-US
+    response_en = await fake_ai.generate_executive_summary(
+        indicators=[],
+        anomalies=[],
+        period=period,
+        language=SupportedLanguage.EN_US,
+    )
+    assert response_en.financial_health_status == "HEALTHY"
+    assert "balanced budget execution" in response_en.executive_summary
+    assert len(response_en.strategic_recommendations) >= 1
 
 
 @pytest.mark.asyncio
 async def test_should_generate_fake_ai_summary_for_critical_period() -> None:
-    """Verify that fake AI port flags critical health when overruns exist."""
+    """Verify fake AI port flags critical health when overruns exist in PT and EN."""
     fake_ai = FakeAIPort()
     period = Period(2026, 3)
     indicator = CostCenterIndicator(
@@ -329,15 +342,27 @@ async def test_should_generate_fake_ai_summary_for_critical_period() -> None:
         status=IndicatorStatus.CRITICAL_OVERRUN,
     )
 
-    response = await fake_ai.generate_executive_summary(
+    # PT-BR
+    response_pt = await fake_ai.generate_executive_summary(
         indicators=[indicator],
         anomalies=[],
         period=period,
+        language=SupportedLanguage.PT_BR,
     )
+    assert response_pt.financial_health_status == "CRITICAL"
+    assert "CC-OPS" in response_pt.executive_summary
+    assert any("CC-OPS" in r for r in response_pt.root_causes)
 
-    assert response.financial_health_status == "CRITICAL"
-    assert "CC-OPS" in response.executive_summary
-    assert any("CC-OPS" in r for r in response.root_causes)
+    # EN-US
+    response_en = await fake_ai.generate_executive_summary(
+        indicators=[indicator],
+        anomalies=[],
+        period=period,
+        language=SupportedLanguage.EN_US,
+    )
+    assert response_en.financial_health_status == "CRITICAL"
+    assert "CC-OPS" in response_en.executive_summary
+    assert any("CC-OPS" in r for r in response_en.root_causes)
 
 
 @pytest.mark.asyncio
@@ -495,9 +520,25 @@ async def test_should_generate_executive_summary_happy_path() -> None:
 
     assert result.period == period
     assert not result.is_fallback
-    assert result.financial_health_status in {"HEALTHY", "CONCERNING", "CRITICAL"}
+    assert result.language == SupportedLanguage.PT_BR
+    assert result.financial_health_status in {
+        "HEALTHY",
+        "CONCERNING",
+        "CRITICAL",
+        "SAUDÁVEL",
+        "ATENÇÃO",
+        "CRÍTICO",
+    }
     assert result.indicators_summary.total_budgeted == Decimal("5000.00")
     assert result.indicators_summary.total_actual == Decimal("4000.00")
+
+    result_en = await summary_uc.execute(period, language=SupportedLanguage.EN_US)
+    assert result_en.language == SupportedLanguage.EN_US
+    assert result_en.financial_health_status in {
+        "HEALTHY",
+        "CONCERNING",
+        "CRITICAL",
+    }
 
 
 @pytest.mark.asyncio
@@ -526,10 +567,18 @@ async def test_should_gracefully_fallback_when_ai_provider_fails() -> None:
         ai_port=failing_ai,
     )
 
-    result = await summary_uc.execute(period)
+    # PT-BR fallback (default)
+    result_pt = await summary_uc.execute(period)
+    assert result_pt.is_fallback
+    assert result_pt.language == SupportedLanguage.PT_BR
+    assert "INDISPONÍVEL" in result_pt.financial_health_status
+    assert "fallback determinístico" in result_pt.executive_summary
+    assert len(result_pt.strategic_recommendations) >= 1
 
-    # Should degrade gracefully, delivering data without crashing
-    assert result.is_fallback
-    assert "UNAVAILABLE" in result.financial_health_status
-    assert "deterministic fallback" in result.executive_summary
-    assert len(result.strategic_recommendations) >= 1
+    # EN-US fallback
+    result_en = await summary_uc.execute(period, language=SupportedLanguage.EN_US)
+    assert result_en.is_fallback
+    assert result_en.language == SupportedLanguage.EN_US
+    assert "UNAVAILABLE" in result_en.financial_health_status
+    assert "deterministic fallback" in result_en.executive_summary
+    assert len(result_en.strategic_recommendations) >= 1

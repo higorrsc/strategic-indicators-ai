@@ -16,6 +16,7 @@ from src.shared.domain.value_objects import (
     Money,
     Percentage,
     Period,
+    SupportedLanguage,
 )
 
 
@@ -167,3 +168,25 @@ class TestAccountCode:
             AccountCode(".3.1")
         with pytest.raises(InvalidAccountCodeError):
             AccountCode("3.1.abc")
+
+
+class TestSupportedLanguage:
+    """Tests for SupportedLanguage value object / enum."""
+
+    def test_should_parse_valid_languages(self) -> None:
+        assert SupportedLanguage.from_string("pt-br") == SupportedLanguage.PT_BR
+        assert SupportedLanguage.from_string("PT-BR") == SupportedLanguage.PT_BR
+        assert SupportedLanguage.from_string("en-us") == SupportedLanguage.EN_US
+        assert SupportedLanguage.from_string("EN-US ") == SupportedLanguage.EN_US
+
+    def test_should_reject_unsupported_language(self) -> None:
+        with pytest.raises(ValueError, match="Unsupported language 'es-es'"):
+            SupportedLanguage.from_string("es-es")
+        with pytest.raises(ValueError, match="Unsupported language ''"):
+            SupportedLanguage.from_string("")
+
+    def test_enum_members_and_values(self) -> None:
+        assert SupportedLanguage.PT_BR.value == "pt-br"
+        assert SupportedLanguage.EN_US.value == "en-us"
+        assert str(SupportedLanguage.PT_BR) == "pt-br"
+        assert SupportedLanguage("pt-br") == SupportedLanguage.PT_BR
