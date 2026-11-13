@@ -7,10 +7,14 @@ from decimal import Decimal
 import pytest
 
 from scripts.seed_ai_data import seed_data
+from src.allocation.application.use_cases.get_cost_center_accounting_breakdown import (
+    GetCostCenterAccountingBreakdownUseCase,
+)
 from src.indicators.domain.models import IndicatorStatus
 from src.intelligence.domain.models import AnomalyType
 from src.presentation.dependencies import DependencyContainer
 from src.shared.config.settings import Settings
+from src.shared.domain.value_objects import CostCenterCode
 from src.shared.infrastructure.database.base import Base
 
 
@@ -65,6 +69,41 @@ async def test_should_seed_data_and_generate_ai_executive_summary() -> None:
         # Verify root causes and recommendations generated
         assert len(summary.root_causes) >= 3
         assert len(summary.strategic_recommendations) >= 2
+
+        # Verify seeded accounting accounts
+        accounts = await container.accounting_account_repo.list_all()
+        assert len(accounts) >= 5
+        account_codes = {str(a.code) for a in accounts}
+        assert {"3.1.01", "3.1.02", "3.1.03", "3.2.01", "3.3.01"}.issubset(
+            account_codes
+        )
+
+        # Verify cost center accounting account breakdown
+        breakdown_uc = GetCostCenterAccountingBreakdownUseCase(
+            measurement_repository=container.measurement_repo,
+            accounting_account_repository=container.accounting_account_repo,
+        )
+
+        # Software Engineering (1.1.2) has multi-account breakdown in 2026-01:
+        # Software (3.1.02) from AWS + Consulting (3.1.03) from TechConsult
+        cc_software = await container.cost_center_repo.get_by_code(
+            CostCenterCode("1.1.2")
+        )
+        assert cc_software is not None
+        breakdown_software = await breakdown_uc.execute(cc_software.id, "2026-01")
+        assert breakdown_software.total_spent == Decimal("49000.00")
+        assert len(breakdown_software.accounts) == 2
+        sw_codes = {a.account_code for a in breakdown_software.accounts}
+        assert sw_codes == {"3.1.02", "3.1.03"}
+
+        # Cloud Infrastructure (1.1.1) in target period 2026-03
+        cc_cloud = await container.cost_center_repo.get_by_code(CostCenterCode("1.1.1"))
+        assert cc_cloud is not None
+        breakdown_cloud = await breakdown_uc.execute(cc_cloud.id, "2026-03")
+        assert breakdown_cloud.total_spent == Decimal("117000.00")
+        assert len(breakdown_cloud.accounts) == 1
+        assert breakdown_cloud.accounts[0].account_code == "3.1.01"
+        assert breakdown_cloud.accounts[0].spent_amount == Decimal("117000.00")
 
     finally:
         await container.close_database()

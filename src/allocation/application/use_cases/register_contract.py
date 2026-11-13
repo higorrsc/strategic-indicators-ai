@@ -52,6 +52,7 @@ class RegisterContractUseCase:
             AllocationShare(
                 cost_center_id=s.cost_center_id,
                 percentage=Percentage.from_number(s.percentage),
+                accounting_account_id=s.accounting_account_id,
             )
             for s in command.default_allocations
         ]
@@ -74,6 +75,7 @@ class RegisterContractUseCase:
                 AllocationShareDTO(
                     cost_center_id=s.cost_center_id,
                     percentage=s.percentage.value,
+                    accounting_account_id=s.accounting_account_id,
                 )
                 for s in contract.default_allocations
             ],

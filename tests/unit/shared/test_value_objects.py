@@ -4,12 +4,14 @@ import pytest
 
 from src.shared.domain.exceptions import (
     CurrencyMismatchError,
+    InvalidAccountCodeError,
     InvalidCostCenterCodeError,
     InvalidMonetaryAmountError,
     InvalidPercentageError,
     InvalidPeriodError,
 )
 from src.shared.domain.value_objects import (
+    AccountCode,
     CostCenterCode,
     Money,
     Percentage,
@@ -139,3 +141,29 @@ class TestCostCenterCode:
             CostCenterCode("1..0")
         with pytest.raises(InvalidCostCenterCodeError):
             CostCenterCode(".1.0")
+
+
+class TestAccountCode:
+    def test_should_parse_and_identify_hierarchy(self) -> None:
+        root = AccountCode("3")
+        group = AccountCode("3.1")
+        item = AccountCode("3.1.01")
+        assert root.level == 1
+        assert group.level == 2
+        assert item.level == 3
+        assert item.parent_code == group
+        assert group.parent_code == root
+        assert root.parent_code is None
+        assert root.is_ancestor_of(item)
+        assert item.is_descendant_of(root)
+        assert str(item) == "3.1.01"
+
+    def test_should_reject_invalid_syntax(self) -> None:
+        with pytest.raises(InvalidAccountCodeError):
+            AccountCode("")
+        with pytest.raises(InvalidAccountCodeError):
+            AccountCode("3..1")
+        with pytest.raises(InvalidAccountCodeError):
+            AccountCode(".3.1")
+        with pytest.raises(InvalidAccountCodeError):
+            AccountCode("3.1.abc")

@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.presentation.api.v1 import (
+    accounting_router,
     allocation_router,
     budgeting_router,
     indicators_router,
@@ -61,6 +62,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(budgeting_router)
     app.include_router(allocation_router)
+    app.include_router(accounting_router)
     app.include_router(indicators_router)
     app.include_router(intelligence_router)
 

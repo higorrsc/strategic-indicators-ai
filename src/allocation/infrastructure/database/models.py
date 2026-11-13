@@ -28,6 +28,20 @@ class SupplierModel(Base):
     )
 
 
+class AccountingAccountModel(Base):
+    """SQLAlchemy model representing an accounting account."""
+
+    __tablename__ = "accounting_accounts"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    code: Mapped[str] = mapped_column(
+        String(50), unique=True, index=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
 class ContractModel(Base):
     """SQLAlchemy model representing a supplier agreement with default allocations."""
 
@@ -75,11 +89,20 @@ class ContractAllocationModel(Base):
         index=True,
     )
     cost_center_id: Mapped[UUID] = mapped_column(Uuid, nullable=False, index=True)
+    accounting_account_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("accounting_accounts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     percentage: Mapped[Decimal] = mapped_column(Numeric(7, 4), nullable=False)
 
     contract: Mapped[ContractModel] = relationship(
         "ContractModel",
         back_populates="default_allocations",
+    )
+    accounting_account: Mapped[AccountingAccountModel | None] = relationship(
+        "AccountingAccountModel",
     )
 
 
@@ -128,6 +151,12 @@ class AllocationEntryModel(Base):
         index=True,
     )
     cost_center_id: Mapped[UUID] = mapped_column(Uuid, nullable=False, index=True)
+    accounting_account_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("accounting_accounts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="USD", nullable=False)
     percentage: Mapped[Decimal] = mapped_column(Numeric(7, 4), nullable=False)
@@ -135,4 +164,7 @@ class AllocationEntryModel(Base):
     measurement: Mapped[MeasurementModel] = relationship(
         "MeasurementModel",
         back_populates="entries",
+    )
+    accounting_account: Mapped[AccountingAccountModel | None] = relationship(
+        "AccountingAccountModel",
     )

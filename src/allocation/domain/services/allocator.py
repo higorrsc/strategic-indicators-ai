@@ -47,12 +47,19 @@ class ExactPennyAllocator:
             )
 
         # 2. Compute individual quantized amounts
-        calculated: list[tuple[UUID, Percentage, Decimal]] = []
+        calculated: list[tuple[UUID, Percentage, Decimal, UUID | None]] = []
         for share in shares:
             ratio = share.percentage.as_ratio()
             raw_amount = gross_amount.amount * ratio
             quantized = raw_amount.quantize(_CENT, rounding=ROUND_HALF_UP)
-            calculated.append((share.cost_center_id, share.percentage, quantized))
+            calculated.append(
+                (
+                    share.cost_center_id,
+                    share.percentage,
+                    quantized,
+                    share.accounting_account_id,
+                )
+            )
 
         # 3. Calculate difference from rounding
         total_quantized = sum((item[2] for item in calculated), Decimal("0.00"))
@@ -64,8 +71,8 @@ class ExactPennyAllocator:
                 range(len(calculated)),
                 key=lambda i: calculated[i][2],
             )
-            cc_id, pct, amt = calculated[max_idx]
-            calculated[max_idx] = (cc_id, pct, amt + discrepancy)
+            cc_id, pct, amt, acc_id = calculated[max_idx]
+            calculated[max_idx] = (cc_id, pct, amt + discrepancy, acc_id)
 
         # 5. Build final AllocationEntry list
         return [
@@ -73,6 +80,7 @@ class ExactPennyAllocator:
                 cost_center_id=cc_id,
                 percentage=pct,
                 amount=Money(amount=amt, currency=gross_amount.currency),
+                accounting_account_id=acc_id,
             )
-            for cc_id, pct, amt in calculated
+            for cc_id, pct, amt, acc_id in calculated
         ]

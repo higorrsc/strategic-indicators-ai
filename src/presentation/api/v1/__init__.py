@@ -1,5 +1,8 @@
 """API v1 routers."""
 
+from src.presentation.api.v1.accounting_router import (
+    router as accounting_router,
+)
 from src.presentation.api.v1.allocation_router import (
     router as allocation_router,
 )
@@ -14,6 +17,7 @@ from src.presentation.api.v1.intelligence_router import (
 )
 
 __all__ = [
+    "accounting_router",
     "allocation_router",
     "budgeting_router",
     "indicators_router",
