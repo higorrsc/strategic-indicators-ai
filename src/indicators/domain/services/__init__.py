@@ -9,4 +9,3 @@ from src.indicators.domain.services.variance_calculator import (
 )
 
 __all__ = ["BudgetVarianceCalculator", "MaterialityAnalyzer", "WhatIfSimulator"]
-

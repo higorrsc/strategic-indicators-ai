@@ -262,7 +262,6 @@ async def test_should_query_materiality_focus_across_dimensions_and_metrics(
     assert contract_resp.status_code == 201
     contract_id = contract_resp.json()["id"]
 
-
     # 5. Submit & Approve Measurements for 2026-04
     # Spend breakdown on $24,000 gross:
     # c1_1 (cloud): 12,000 -> 50.00%
@@ -304,7 +303,6 @@ async def test_should_query_materiality_focus_across_dimensions_and_metrics(
     assert m_resp.status_code == 201
     m_id = m_resp.json()["id"]
     await client.post(f"/api/v1/measurements/{m_id}/approve")
-
 
     # TEST A: Cost Center Level by Variance (Default)
     resp_cc_var = await client.get(
@@ -375,7 +373,6 @@ async def test_should_query_materiality_focus_across_dimensions_and_metrics(
     assert scoped_item1["code"] == "3.1.20"
     assert Decimal(str(scoped_item1["share_of_total_pct"])) == Decimal("20.00")
 
-
     # TEST E: Threshold Cutoff Filtering
     resp_cutoff = await client.get(
         "/api/v1/indicators/2026-04/materiality-focus"
@@ -400,4 +397,3 @@ async def test_should_query_materiality_focus_across_dimensions_and_metrics(
         "/api/v1/indicators/2026-04/materiality-focus?level=unknown_dimension"
     )
     assert resp_invalid_level.status_code == 422
-

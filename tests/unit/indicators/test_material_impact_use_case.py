@@ -63,7 +63,6 @@ def use_case_setup() -> _UseCaseSetup:
 async def test_should_generate_materiality_at_cost_center_level_by_variance(
     use_case_setup: _UseCaseSetup,
 ) -> None:
-
     """Verify cost_center level analysis ranks overrun cost centers by variance."""
     use_case, cc_repo, budget_repo, meas_repo, _ = use_case_setup
     period = Period.from_string("2026-03")
@@ -160,7 +159,6 @@ async def test_should_generate_materiality_at_cost_center_level_by_variance(
 async def test_should_generate_materiality_at_hierarchy_level_by_spend(
     use_case_setup: _UseCaseSetup,
 ) -> None:
-
     """Verify hierarchy level rolls up children to root parents and ranks by spend."""
     use_case, cc_repo, _, meas_repo, _ = use_case_setup
     period = Period.from_string("2026-03")
@@ -253,9 +251,7 @@ async def test_should_generate_materiality_at_accounting_account_level_globally(
     await cc_repo.add(cc1)
     await cc_repo.add(cc2)
 
-    acc_cloud = AccountingAccount(
-        code=AccountCode("3.1.01"), name="Cloud Computing"
-    )
+    acc_cloud = AccountingAccount(code=AccountCode("3.1.01"), name="Cloud Computing")
     acc_licenses = AccountingAccount(
         code=AccountCode("3.1.02"), name="Software Licenses"
     )
@@ -389,7 +385,6 @@ async def test_should_generate_materiality_at_account_level_scoped_by_cost_cente
     assert report.items[1].priority == "IMMEDIATE_ACTION"
 
 
-
 async def test_should_raise_cost_center_not_found_when_cost_center_filter_is_invalid(
     use_case_setup: _UseCaseSetup,
 ) -> None:
@@ -407,7 +402,6 @@ async def test_should_raise_cost_center_not_found_when_cost_center_filter_is_inv
 async def test_should_filter_by_threshold_pct(
     use_case_setup: _UseCaseSetup,
 ) -> None:
-
     """Verify threshold_pct filters report to Pareto vital subset."""
     use_case, cc_repo, _, meas_repo, acc_repo = use_case_setup
     period = Period.from_string("2026-03")

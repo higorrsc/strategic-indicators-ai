@@ -73,4 +73,3 @@ class MaterialityAnalysisResult:
     total_baseline_spent: Money
     total_baseline_overrun: Money
     items: list[MaterialityItem]
-

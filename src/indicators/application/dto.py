@@ -129,4 +129,3 @@ class GenerateMaterialImpactQuery:
     metric: str = "variance"
     cost_center_id: UUID | None = None
     threshold_pct: Decimal | None = None
-

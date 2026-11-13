@@ -177,9 +177,7 @@ async def get_materiality_focus(
     ] = AggregationLevel.COST_CENTER,
     metric: Annotated[
         FocusMetric,
-        Query(
-            description="Focus metric for ranking: variance (overruns) or spend"
-        ),
+        Query(description="Focus metric for ranking: variance (overruns) or spend"),
     ] = FocusMetric.VARIANCE,
     cost_center_id: Annotated[
         UUID | None,
@@ -243,4 +241,3 @@ async def get_materiality_focus(
         ],
         currency=result.currency,
     )
-

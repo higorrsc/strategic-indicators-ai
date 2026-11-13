@@ -65,4 +65,3 @@ __all__ = [
     "ScenarioSimulateRequest",
     "SimulationResultResponse",
 ]
-

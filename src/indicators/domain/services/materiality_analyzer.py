@@ -68,9 +68,8 @@ class MaterialityAnalyzer:
             if candidate_variance is None and c.planned_budget is not None:
                 candidate_variance = c.actual_spent - c.planned_budget
 
-            if (
-                candidate_variance is not None
-                and candidate_variance.amount > Decimal("0.00")
+            if candidate_variance is not None and candidate_variance.amount > Decimal(
+                "0.00"
             ):
                 total_overrun += candidate_variance
 
@@ -117,10 +116,9 @@ class MaterialityAnalyzer:
         ):
             rank = idx + 1
 
-            has_positive_metric = (
-                total_metric_amount > Decimal("0.00")
-                and metric_value.amount > Decimal("0.00")
-            )
+            has_positive_metric = total_metric_amount > Decimal(
+                "0.00"
+            ) and metric_value.amount > Decimal("0.00")
             if has_positive_metric:
                 share = (
                     metric_value.amount / total_metric_amount * Decimal("100.00")
@@ -140,7 +138,6 @@ class MaterialityAnalyzer:
             else:
                 share = Decimal("0.00")
                 priority = ActionPriority.LOW_IMPACT
-
 
             evaluated_items.append(
                 MaterialityItem(

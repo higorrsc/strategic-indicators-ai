@@ -120,6 +120,16 @@ flowchart TD
     - `WARNING`: Execution rate between $90\%$ and $100\%$.
     - `CRITICAL_OVERRUN`: Execution rate $> 100\%$ with explicit overrun metrics.
 
+- **Pareto Materiality & Effort Prioritization Analysis**:
+  - Directs managerial attention toward high-impact areas using the Pareto Principle (80/20 rule).
+  - Multi-level segregation dimensions:
+    - `cost_center`: Evaluates individual leaf departmental units.
+    - `hierarchy`: Consolidates subtree expenditures up to root ancestor divisions.
+    - `accounting_account`: Analyzes expenditures by expense nature (globally or scoped to a specific cost center).
+  - Flexible metric prioritization: Budget overruns (`variance`) or expenditure magnitude (`spend`).
+  - Action priority classification: `IMMEDIATE_ACTION` (Top 80% cumulative impact), `MONITOR` (Next 15%), and `LOW_IMPACT` (Remaining 5%).
+  - Configurable Pareto cutoff filter (`threshold_pct`).
+
 - **What-If Scenario Simulation Engine**:
   - In-memory hypothetical impact analysis evaluating supplier contract inflation adjustments and cross-center allocation shifts.
   - Immediate identification and counting of cost centers shifting from healthy to `CRITICAL_OVERRUN` before financial commitments are approved.
@@ -406,6 +416,7 @@ AI_PROVIDER=fake uv run python -m scripts.seed_ai_data --database-url "sqlite+ai
 ```
 
 The seed script establishes:
+
 - A 3-level cost center hierarchy (`1.0` Corporate &rarr; `1.1` IT [`1.1.1` Cloud, `1.1.2` Software], `1.2` Operations, `1.3` Marketing).
 - Multi-period budget targets and vendor contracts (`CT-AWS-2026`, `CT-LOG-2026`, `CT-MKT-2026`).
 - Historical baseline measurements (`2026-01`, `2026-02`).
@@ -459,7 +470,9 @@ Access the application:
 | **Measurements** | `GET` | `/api/v1/measurements/{id}` | Retrieve measurement details |
 | **Measurements** | `POST` | `/api/v1/measurements/{id}/approve` | Approve measurement and lock allocation |
 | **Indicators** | `GET` | `/api/v1/indicators/{period}` | Compute period variance and execution status |
+| **Indicators** | `GET` | `/api/v1/indicators/{period}/materiality-focus` | Pareto effort prioritization analysis (`cost_center`, `hierarchy`, `accounting_account`) |
 | **Scenarios** | `POST` | `/api/v1/scenarios/simulate` | In-memory What-If simulation (inflation & shifts) |
+
 | **Intelligence** | `GET` | `/api/v1/intelligence/anomalies/{id}` | Detect abrupt rateio shifts and budget dumping |
 | **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary` | Generate AI executive analysis and action plan (`lang=pt-br` or `en-us`) |
 | **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary/pdf` | Download formatted binary PDF executive briefing (`lang=pt-br` or `en-us`) |

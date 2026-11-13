@@ -31,6 +31,7 @@
     - `threshold_pct=80`
 
 
-- [ ] 4. Documentation & Verification
-  - [ ] 4.1 Run full quality suite (`uv run pytest`, `uv run ruff check .`, `uv run pyrefly check`)
-  - [ ] 4.2 Update `README.md` and OpenAPI documentation
+- [x] 4. Documentation & Verification
+  - [x] 4.1 Run full quality suite (`uv run pytest`, `uv run ruff check .`, `uv run pyrefly check`)
+  - [x] 4.2 Update `README.md` and OpenAPI documentation
+

@@ -93,7 +93,6 @@ class GenerateMaterialImpactReportUseCase:
         elif measurements and measurements[0].gross_amount:
             currency = measurements[0].gross_amount.currency
 
-
         if level == AggregationLevel.COST_CENTER:
             candidates = await self._build_cost_center_candidates(
                 query=query,
@@ -160,7 +159,6 @@ class GenerateMaterialImpactReportUseCase:
             total_budget_amount = None
 
         return MaterialImpactReportDTO(
-
             period=str(period),
             aggregation_level=level.value,
             focus_metric=metric.value,
@@ -184,9 +182,7 @@ class GenerateMaterialImpactReportUseCase:
             cc = await self._cost_center_repository.get_by_id(query.cost_center_id)
             cost_centers = [cc] if cc and cc.is_active else []
         else:
-            cost_centers = await self._cost_center_repository.list_all(
-                active_only=True
-            )
+            cost_centers = await self._cost_center_repository.list_all(active_only=True)
 
         candidates: list[MaterialityCandidate] = []
         for cc in cost_centers:
@@ -326,10 +322,9 @@ class GenerateMaterialImpactReportUseCase:
             candidates: list[MaterialityCandidate] = []
             for acc_id, spent in acc_spends.items():
                 acc_code, acc_name = await self._resolve_account(acc_id)
-                has_positive_overrun = (
-                    cc_spent.amount > Decimal("0.00")
-                    and cc_overrun.amount > Decimal("0.00")
-                )
+                has_positive_overrun = cc_spent.amount > Decimal(
+                    "0.00"
+                ) and cc_overrun.amount > Decimal("0.00")
                 if has_positive_overrun:
                     ratio = spent.amount / cc_spent.amount
                     acc_variance = Money(
@@ -338,7 +333,6 @@ class GenerateMaterialImpactReportUseCase:
                     )
                 else:
                     acc_variance = Money.zero(currency)
-
 
                 candidates.append(
                     MaterialityCandidate(
@@ -388,10 +382,9 @@ class GenerateMaterialImpactReportUseCase:
                     acc_id = e.accounting_account_id
                     ratio = e.amount.amount / c_spent.amount
                     contrib = (c_overrun.amount * ratio).quantize(Decimal("0.01"))
-                    acc_overruns[acc_id] = (
-                        acc_overruns.get(acc_id, Money.zero(currency))
-                        + Money(contrib, currency)
-                    )
+                    acc_overruns[acc_id] = acc_overruns.get(
+                        acc_id, Money.zero(currency)
+                    ) + Money(contrib, currency)
 
         candidates = []
         for acc_id, spent in acc_spends.items():

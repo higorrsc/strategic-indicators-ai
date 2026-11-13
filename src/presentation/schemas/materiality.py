@@ -29,9 +29,7 @@ class MaterialityItemResponse(BaseModel):
     variance: Decimal | None = Field(
         default=None, description="Monetary variance (actual - planned)."
     )
-    metric_value: Decimal = Field(
-        description="Evaluated metric value for ranking."
-    )
+    metric_value: Decimal = Field(description="Evaluated metric value for ranking.")
     share_of_total_pct: Decimal = Field(
         description="Percentage share of the total metric."
     )
@@ -63,15 +61,11 @@ class MaterialImpactReportResponse(BaseModel):
     total_baseline_budget: Decimal | None = Field(
         default=None, description="Total baseline budget."
     )
-    total_baseline_spent: Decimal = Field(
-        description="Total baseline expenditure."
-    )
+    total_baseline_spent: Decimal = Field(description="Total baseline expenditure.")
     total_baseline_overrun: Decimal = Field(
         description="Total baseline budget overrun."
     )
-    items_count: int = Field(
-        description="Total number of ranked items returned."
-    )
+    items_count: int = Field(description="Total number of ranked items returned.")
     items: list[MaterialityItemResponse] = Field(
         description="Ranked list of materiality items."
     )

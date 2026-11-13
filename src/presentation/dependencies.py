@@ -610,7 +610,6 @@ def get_material_impact_use_case(
     )
 
 
-
 def get_analyze_anomalies_use_case(
     measurement_repo: Annotated[
         MeasurementRepository, Depends(get_measurement_repository)
@@ -732,4 +731,3 @@ MaterialImpactUseCaseDep = Annotated[
     GenerateMaterialImpactReportUseCase,
     Depends(get_material_impact_use_case),
 ]
-
