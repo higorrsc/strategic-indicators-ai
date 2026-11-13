@@ -7,7 +7,7 @@ from decimal import Decimal
 import pytest
 
 from scripts.seed_ai_data import seed_data
-from src.allocation.application.use_cases.get_cost_center_accounting_breakdown import (
+from src.allocation.application.use_cases.queries import (
     GetCostCenterAccountingBreakdownUseCase,
 )
 from src.indicators.domain.models import IndicatorStatus

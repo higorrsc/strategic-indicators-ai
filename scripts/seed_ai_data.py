@@ -19,7 +19,7 @@ import asyncio
 from decimal import Decimal
 from uuid import UUID, uuid4
 
-from src.allocation.application.use_cases.get_cost_center_accounting_breakdown import (
+from src.allocation.application.use_cases.queries import (
     GetCostCenterAccountingBreakdownUseCase,
 )
 from src.allocation.domain.entities.accounting_account import AccountingAccount
@@ -29,7 +29,7 @@ from src.allocation.domain.entities.supplier import Supplier
 from src.allocation.domain.services.allocator import ExactPennyAllocator
 from src.budgeting.domain.entities.budget_target import BudgetTarget
 from src.budgeting.domain.entities.cost_center import CostCenter
-from src.indicators.application.use_cases.queries.compute_period_indicators import (
+from src.indicators.application.use_cases.queries import (
     ComputePeriodIndicatorsUseCase,
 )
 from src.intelligence.application.dto import ExecutiveSummaryDTO
