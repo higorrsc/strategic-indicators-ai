@@ -1,7 +1,7 @@
 # Design Document: CQRS Separation and Architectural Modularization
 
-**Date:** 2026-11-13  
-**Status:** In Review  
+**Date:** 2026-11-13
+**Status:** In Review
 **Branch:** `feature/refactor-cqrs-and-modularization`
 
 ---
@@ -24,6 +24,7 @@ The goal of this refactoring is to untangle these concerns, increase cohesion, l
 ## 2. Goals, Non-Goals, and Anti-Goals
 
 ### Goals
+
 - **CQRS Organization:** Separate use cases in all bounded contexts into explicit `commands/` and `queries/` subpackages.
 - **Modular Composition Root:** Break down `src/presentation/dependencies.py` into cohesive context providers (e.g., `budgeting_container.py`, `allocation_container.py`, `intelligence_container.py`, coordinated by a slim container facade).
 - **Context-Co-Located Repositories:** Move `SessionManaged*Repository` classes from `src/shared/` into their respective bounded contexts (e.g., `src/budgeting/infrastructure/repositories/session_managed.py`).
@@ -33,13 +34,15 @@ The goal of this refactoring is to untangle these concerns, increase cohesion, l
 - **Zero Regressions:** Ensure all 159 tests pass, Ruff formatting and linting pass with 0 warnings, and Pyrefly passes with 0 typing errors.
 
 ### Non-Goals
+
 - Altering business logic, calculation algorithms, rounding rules, or domain validation invariants.
 - Modifying HTTP API endpoint paths, JSON request/response contracts, or query parameters.
 - Changing database table schemas or generating new database migrations (ORM table names and columns remain identical).
 - Introducing an asynchronous message bus or event-driven CQRS infrastructure (this refactoring is strictly architectural/structural separation of code responsibilities).
 
 ### Anti-Goals
-- Introducing breaking changes to existing public imports that would cause regression in client code or test suites (use `__init__.py` re-exports to maintain backwards compatibility).
+
+- Creating legacy shim files or artificial backward-compatibility layers (since this is a new application, all imports in tests and presentation should be directly and cleanly refactored to the new canonical module paths).
 - Creating deep unnecessary nesting or over-engineering abstractions just for the sake of separation.
 
 ---
@@ -47,7 +50,6 @@ The goal of this refactoring is to untangle these concerns, increase cohesion, l
 ## 3. Constraints
 
 - **Clean Architecture & DDD (AGENTS.md):** Domain layer must remain pure Python with zero dependencies on frameworks, ORMs, or outer layers. Inner layers must not depend on outer layers.
-- **Backwards Compatibility:** Public interfaces exposed by package `__init__.py` must remain compatible so that existing imports throughout `tests/` and `main.py` continue to resolve seamlessly.
 - **Type Safety:** 100% strict typing compliance with Pyrefly (no unannotated definitions, no `Any` leaks).
 - **Git Flow:** Feature developed on branch `feature/refactor-cqrs-and-modularization`.
 
@@ -56,13 +58,14 @@ The goal of this refactoring is to untangle these concerns, increase cohesion, l
 ## 4. Approaches Considered
 
 ### Approach 1: Modularization by Aggregate & CQRS (Selected)
-- Group use cases into `commands/` and `queries/` in each context.
+
+- Replace flat `use_cases/` directories with explicit `commands/` and `queries/` subpackages in each bounded context, directly updating all callers and tests without legacy shims.
 - Convert monolithic files (`models.py`, `dto.py`, `dependencies.py`, `repositories.py`, `allocation_router.py`, `seed_ai_data.py`) into cohesive modular subpackages or files.
-- Re-export symbols from package `__init__.py` files to guarantee non-breaking compatibility across test suites.
-- **Pros:** Directly eliminates files with 300-700+ lines, isolates single responsibilities, enhances readability, and guarantees 100% test compatibility.
-- **Cons:** Involves moving and creating multiple files, requiring careful import management.
+- **Pros:** Directly eliminates files with 300-700+ lines, isolates single responsibilities, enhances readability, leaves zero technical debt or dead shim files.
+- **Cons:** Requires updating import paths across the codebase and test files.
 
 ### Approach 2: Vertical Slice Re-Architecture (Rejected)
+
 - Split the `allocation` context completely into three separate top-level bounded contexts (`src/contracts/`, `src/measurements/`, `src/accounting/`), each with its own domain, application, infrastructure, and presentation layers.
 - **Pros:** Complete isolation of smaller subdomains.
 - **Cons:** Drastic rewrite of the entire codebase structure, high overhead, high risk of regression, and artificial duplication of shared allocation infrastructure.
@@ -73,7 +76,7 @@ The goal of this refactoring is to untangle these concerns, increase cohesion, l
 
 ### 5.1 CQRS Separation in Application Layer
 
-In each bounded context:
+In each bounded context, the flat `use_cases/` directory is replaced by `commands/` and `queries/`:
 
 ```text
 src/budgeting/application/
@@ -81,35 +84,29 @@ src/budgeting/application/
 │   ├── __init__.py
 │   ├── create_cost_center.py
 │   └── set_budget_target.py
-├── queries/
-│   ├── __init__.py
-│   └── get_hierarchy_budget.py
-└── use_cases/   # Re-exports commands and queries for full backward compatibility
+└── queries/
     ├── __init__.py
-    ├── create_cost_center.py  # Re-export shim pointing to commands.create_cost_center
-    ├── set_budget_target.py   # Re-export shim pointing to commands.set_budget_target
-    └── get_hierarchy_budget.py # Re-export shim pointing to queries.get_hierarchy_budget
+    └── get_hierarchy_budget.py
 ```
 
-*Note on Backward Compatibility:* Individual file shims in `use_cases/` alongside `use_cases/__init__.py` re-export all use cases. Routers and presentation are updated to import from `commands/` and `queries/`, while legacy test references remain completely unbroken.
+Callers (routers, dependencies, and test files) import directly from the new canonical packages (`src.budgeting.application.commands` and `src.budgeting.application.queries`). No shim files or intermediate `use_cases/` directories are retained.
 
 Same structure for:
+
 - `src/allocation/application/`:
   - `commands/`: `register_accounting_account.py`, `register_contract.py`, `submit_measurement.py`, `approve_measurement.py`
   - `queries/`: `list_accounting_accounts.py`, `list_contracts.py`, `list_measurements.py`, `get_cost_center_accounting_breakdown.py`
-  - `use_cases/`: Re-exports all commands and queries.
 - `src/indicators/application/`:
   - `commands/`: *(none - indicators is a query/simulation context)*
   - `queries/`: `compute_period_indicators.py`, `material_impact.py`, `simulate_scenario.py`
-  - `use_cases/`: Re-exports all queries.
 - `src/intelligence/application/`:
   - `commands/`: *(none - caching is handled inside orchestration)*
   - `queries/`: `analyze_allocation_anomalies.py`, `generate_executive_summary.py`
-  - `use_cases/`: Re-exports all queries.
 
 ### 5.2 Allocation Models and DTOs Modularization
 
 Convert `src/allocation/infrastructure/database/models.py` into a package:
+
 ```text
 src/allocation/infrastructure/database/models/
 ├── __init__.py             # Exports SupplierModel, ContractModel, MeasurementModel, etc.
@@ -118,12 +115,14 @@ src/allocation/infrastructure/database/models/
 ├── measurement.py
 └── accounting_account.py
 ```
+
 *Note on Alembic Discovery:* `models/__init__.py` explicitly imports all model submodules, ensuring that `migrations/env.py` and SQLAlchemy's `Base.metadata` automatically discover and register all tables identically with zero schema drift.
 
 Convert `src/allocation/application/dto.py` into a package:
+
 ```text
 src/allocation/application/dto/
-├── __init__.py             # Exports all DTOs for complete backward compatibility
+├── __init__.py             # Exports all DTOs
 ├── supplier.py
 ├── contract.py
 ├── measurement.py
@@ -133,37 +132,42 @@ src/allocation/application/dto/
 ### 5.3 Presentation Routers
 
 Split `src/presentation/api/v1/allocation_router.py` into:
+
 - `src/presentation/api/v1/contracts_router.py`: Contract registration and querying.
 - `src/presentation/api/v1/measurements_router.py`: Measurement submission, approval, and listing.
 - Keep `accounting_router.py` for accounting accounts and breakdown endpoints.
-- Provide `allocation_router.py` as an aggregator router that mounts sub-routers (or re-exports) so `src/presentation/api/v1/__init__.py` and `app.py` retain backward compatibility.
+- Update `src/presentation/api/v1/__init__.py` and `app.py` to mount the specific routers directly under `/api/v1/`.
 
 ### 5.4 Modular Composition Root (`src/presentation/dependencies/`)
 
 Decompose `src/presentation/dependencies.py` (771 lines) into:
+
 ```text
 src/presentation/dependencies/
 ├── __init__.py             # Exposes get_container, set_container, reset_container, DependencyContainer
-├── container.py            # Facade DependencyContainer preserving all existing properties/attributes
+├── container.py            # DependencyContainer facade coordinating context modules
 ├── budgeting.py            # Budgeting repositories, session wrappers, and use cases
 ├── allocation.py           # Allocation repositories, session wrappers, and use cases
 ├── indicators.py           # Indicators services and use cases
 ├── intelligence.py         # Intelligence repositories, AI ports, and use cases
 └── database.py             # Database engine, session factory, and initialization lifecycle
 ```
-*Note on Facade Design:* The `DependencyContainer` facade preserves all public property names (`container.create_cost_center_use_case`, `container.allocation_repository`, `container.ai_port`, etc.) by delegating to the context providers. This guarantees that all unit, integration, and BDD tests interact with `get_container()` and test doubles (`container.ai_port = FakeAIPort()`) with 100% backward compatibility.
+
+*Note on Facade Design:* The `DependencyContainer` facade preserves all public property names (`container.create_cost_center_use_case`, `container.allocation_repository`, `container.ai_port`, etc.) by delegating to the context providers, allowing clean dependency injection and seamless test double injection.
 
 ### 5.5 Co-Location of Session-Managed Repositories
 
-Move `SessionManaged*Repository` classes from `src/shared/infrastructure/database/repositories.py` into each context's infrastructure repository folder:
+Move `SessionManaged*Repository` classes from `src/shared/infrastructure/database/repositories.py` directly into each context's infrastructure repository folder:
+
 - `src/budgeting/infrastructure/repositories/session_managed.py`
 - `src/allocation/infrastructure/repositories/session_managed.py`
 - `src/intelligence/infrastructure/repositories/session_managed.py`
-- `src/shared/infrastructure/database/repositories.py` re-exports them for backwards compatibility.
+- Delete `src/shared/infrastructure/database/repositories.py` once dependencies point to the context-specific modules.
 
 ### 5.6 Modular Seeding Script (`scripts/`)
 
 Decompose `scripts/seed_ai_data.py` (639 lines) into:
+
 ```text
 scripts/
 ├── seed/
