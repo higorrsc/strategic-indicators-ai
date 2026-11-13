@@ -37,6 +37,10 @@ from src.allocation.infrastructure.repositories import (
     InMemoryContractRepository,
     InMemoryMeasurementRepository,
     InMemorySupplierRepository,
+    SessionManagedAccountingAccountRepository,
+    SessionManagedContractRepository,
+    SessionManagedMeasurementRepository,
+    SessionManagedSupplierRepository,
     SqlAlchemyAccountingAccountRepository,
     SqlAlchemyContractRepository,
     SqlAlchemyMeasurementRepository,
@@ -56,6 +60,8 @@ from src.budgeting.domain.repositories.cost_center_repository import (
 from src.budgeting.infrastructure.repositories import (
     InMemoryBudgetRepository,
     InMemoryCostCenterRepository,
+    SessionManagedBudgetRepository,
+    SessionManagedCostCenterRepository,
     SqlAlchemyBudgetRepository,
     SqlAlchemyCostCenterRepository,
 )
@@ -75,18 +81,10 @@ from src.intelligence.application.use_cases.queries import (
 from src.intelligence.infrastructure.pydantic_ai_adapter import PydanticAIAdapter
 from src.intelligence.infrastructure.repositories import (
     InMemoryAIAnalysisCacheRepository,
+    SessionManagedAIAnalysisCacheRepository,
     SqlAlchemyAIAnalysisCacheRepository,
 )
 from src.shared.config.settings import Settings, get_settings
-from src.shared.infrastructure.database.repositories import (
-    SessionManagedAccountingAccountRepository,
-    SessionManagedAIAnalysisCacheRepository,
-    SessionManagedBudgetRepository,
-    SessionManagedContractRepository,
-    SessionManagedCostCenterRepository,
-    SessionManagedMeasurementRepository,
-    SessionManagedSupplierRepository,
-)
 from src.shared.infrastructure.database.session import (
     create_database_engine,
     create_session_factory,
