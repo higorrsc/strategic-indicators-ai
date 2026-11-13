@@ -58,7 +58,12 @@ class AIAnalysisCache:
             return CacheStatus.INVALIDATED_DRIFT
 
         current_time = now or datetime.now(UTC)
-        if current_time >= self.expires_at:
+        expires_at = (
+            self.expires_at
+            if self.expires_at.tzinfo is not None
+            else self.expires_at.replace(tzinfo=UTC)
+        )
+        if current_time >= expires_at:
             return CacheStatus.EXPIRED
 
         return CacheStatus.HIT

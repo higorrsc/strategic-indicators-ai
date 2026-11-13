@@ -284,7 +284,7 @@ class GenerateExecutiveSummaryUseCase:
                 cached_at=None,
             )
 
-        if self._cache_repo:
+        if self._cache_repo and not result_dto.is_fallback:
             ttl_hours = getattr(self._settings, "AI_CACHE_TTL_HOURS", 24)
             payload_to_store = {
                 "financial_health_status": result_dto.financial_health_status,

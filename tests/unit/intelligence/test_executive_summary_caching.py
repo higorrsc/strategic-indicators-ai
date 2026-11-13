@@ -30,6 +30,7 @@ from src.intelligence.application.use_cases import (
     GenerateExecutiveSummaryUseCase,
 )
 from src.intelligence.domain.cache import CacheStatus
+from src.intelligence.domain.exceptions import AIProviderError
 from src.intelligence.infrastructure.fake_ai_adapter import FakeAIPort
 from src.intelligence.infrastructure.repositories.in_memory_ai_cache_repository import (
     InMemoryAIAnalysisCacheRepository,
@@ -276,3 +277,47 @@ async def test_should_scope_by_cost_center(
     assert res_cc2.cache_status == CacheStatus.MISS
     assert res_cc2.indicators_summary.indicators[0].cost_center_id == cc2.id
     assert ai_port.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_should_handle_forced_refresh_on_cold_cache(
+    test_setup: dict[str, Any],
+) -> None:
+    use_case = test_setup["use_case"]
+    ai_port = test_setup["ai_port"]
+    cache_repo = test_setup["cache_repo"]
+    p = test_setup["period"]
+
+    res = await use_case.execute(p, force_refresh=True)
+    assert res.cache_status == CacheStatus.FORCED_REFRESH
+    assert res.is_cached is False
+    assert ai_port.call_count == 1
+
+    # Verify entry was stored
+    cache_key = f"summary:p={p}:l=pt-br:cc=all:acc=all"
+    cached = await cache_repo.get_by_key(cache_key)
+    assert cached is not None
+
+
+@pytest.mark.asyncio
+async def test_should_not_cache_fallback_when_ai_provider_fails(
+    test_setup: dict[str, Any],
+) -> None:
+    use_case = test_setup["use_case"]
+    ai_port = test_setup["ai_port"]
+    cache_repo = test_setup["cache_repo"]
+    p = test_setup["period"]
+
+    async def _failing_generate(*args: Any, **kwargs: Any) -> Any:
+        msg = "Temporary LLM outage"
+        raise AIProviderError(msg)
+
+    ai_port.generate_executive_summary = _failing_generate
+
+    res = await use_case.execute(p)
+    assert res.is_fallback is True
+
+    # Cache should NOT store fallback to allow immediate retries
+    cache_key = f"summary:p={p}:l=pt-br:cc=all:acc=all"
+    cached = await cache_repo.get_by_key(cache_key)
+    assert cached is None

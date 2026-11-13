@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import fields, is_dataclass
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -23,6 +24,11 @@ def _normalize_item(obj: Any) -> Any:
         return str(obj)
     if isinstance(obj, (Period, SupportedLanguage)):
         return str(obj.value if hasattr(obj, "value") else obj)
+    if is_dataclass(obj) and not isinstance(obj, type):
+        return {
+            f.name: _normalize_item(getattr(obj, f.name))
+            for f in sorted(fields(obj), key=lambda x: x.name)
+        }
     if hasattr(obj, "__dict__"):
         return {k: _normalize_item(v) for k, v in sorted(vars(obj).items())}
     if isinstance(obj, dict):

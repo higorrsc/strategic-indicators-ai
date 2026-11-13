@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -74,6 +76,21 @@ class SqlAlchemyAIAnalysisCacheRepository(AIAnalysisCacheRepository):
 
     def _to_domain(self, model: AIAnalysisCacheModel) -> AIAnalysisCache:
         """Map ORM model to domain entity."""
+        created_at = (
+            model.created_at
+            if model.created_at.tzinfo is not None
+            else model.created_at.replace(tzinfo=UTC)
+        )
+        expires_at = (
+            model.expires_at
+            if model.expires_at.tzinfo is not None
+            else model.expires_at.replace(tzinfo=UTC)
+        )
+        updated_at = (
+            model.updated_at
+            if model.updated_at.tzinfo is not None
+            else model.updated_at.replace(tzinfo=UTC)
+        )
         return AIAnalysisCache(
             id=model.id,
             cache_key=model.cache_key,
@@ -83,7 +100,7 @@ class SqlAlchemyAIAnalysisCacheRepository(AIAnalysisCacheRepository):
             accounting_account_id=model.accounting_account_id,
             data_hash=model.data_hash,
             summary_payload=model.summary_payload,
-            created_at=model.created_at,
-            expires_at=model.expires_at,
-            updated_at=model.updated_at,
+            created_at=created_at,
+            expires_at=expires_at,
+            updated_at=updated_at,
         )
