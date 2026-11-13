@@ -6,12 +6,16 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from src.allocation.domain.entities.accounting_account import AccountingAccount
 from src.allocation.domain.entities.contract import Contract
 from src.allocation.domain.entities.measurement import (
     Measurement,
     MeasurementState,
 )
 from src.allocation.domain.entities.supplier import Supplier
+from src.allocation.domain.repositories.accounting_account_repository import (
+    AccountingAccountRepository,
+)
 from src.allocation.domain.repositories.contract_repository import (
     ContractRepository,
 )
@@ -22,6 +26,7 @@ from src.allocation.domain.repositories.supplier_repository import (
     SupplierRepository,
 )
 from src.allocation.infrastructure.repositories import (
+    SqlAlchemyAccountingAccountRepository,
     SqlAlchemyContractRepository,
     SqlAlchemyMeasurementRepository,
     SqlAlchemySupplierRepository,
@@ -36,7 +41,7 @@ from src.budgeting.infrastructure.repositories import (
     SqlAlchemyBudgetRepository,
     SqlAlchemyCostCenterRepository,
 )
-from src.shared.domain.value_objects import CostCenterCode, Period
+from src.shared.domain.value_objects import AccountCode, CostCenterCode, Period
 
 
 class SessionManagedCostCenterRepository(CostCenterRepository):
@@ -251,3 +256,51 @@ class SessionManagedMeasurementRepository(MeasurementRepository):
             repo = SqlAlchemyMeasurementRepository(session)
             await repo.update(measurement)
             await session.commit()
+
+
+class SessionManagedAccountingAccountRepository(AccountingAccountRepository):
+    """AccountingAccountRepository wrapper that executes operations in a session."""
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+        """Initialize with an async session factory."""
+        self._session_factory = session_factory
+
+    async def save(self, account: AccountingAccount) -> None:
+        """Persist accounting account and commit transaction."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            await repo.save(account)
+            await session.commit()
+
+    async def get_by_id(self, account_id: UUID) -> AccountingAccount | None:
+        """Find accounting account by id."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            return await repo.get_by_id(account_id)
+
+    async def get_by_code(self, code: AccountCode) -> AccountingAccount | None:
+        """Find accounting account by code."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            return await repo.get_by_code(code)
+
+    async def list_all(
+        self,
+        active_only: bool = True,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> list[AccountingAccount]:
+        """List accounting accounts with pagination."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            return await repo.list_all(
+                active_only=active_only,
+                offset=offset,
+                limit=limit,
+            )
+
+    async def count(self, active_only: bool = True) -> int:
+        """Count total accounting accounts."""
+        async with self._session_factory() as session:
+            repo = SqlAlchemyAccountingAccountRepository(session)
+            return await repo.count(active_only=active_only)

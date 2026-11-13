@@ -4,16 +4,19 @@ import pytest
 
 from src.shared.domain.exceptions import (
     CurrencyMismatchError,
+    InvalidAccountCodeError,
     InvalidCostCenterCodeError,
     InvalidMonetaryAmountError,
     InvalidPercentageError,
     InvalidPeriodError,
 )
 from src.shared.domain.value_objects import (
+    AccountCode,
     CostCenterCode,
     Money,
     Percentage,
     Period,
+    SupportedLanguage,
 )
 
 
@@ -139,3 +142,51 @@ class TestCostCenterCode:
             CostCenterCode("1..0")
         with pytest.raises(InvalidCostCenterCodeError):
             CostCenterCode(".1.0")
+
+
+class TestAccountCode:
+    def test_should_parse_and_identify_hierarchy(self) -> None:
+        root = AccountCode("3")
+        group = AccountCode("3.1")
+        item = AccountCode("3.1.01")
+        assert root.level == 1
+        assert group.level == 2
+        assert item.level == 3
+        assert item.parent_code == group
+        assert group.parent_code == root
+        assert root.parent_code is None
+        assert root.is_ancestor_of(item)
+        assert item.is_descendant_of(root)
+        assert str(item) == "3.1.01"
+
+    def test_should_reject_invalid_syntax(self) -> None:
+        with pytest.raises(InvalidAccountCodeError):
+            AccountCode("")
+        with pytest.raises(InvalidAccountCodeError):
+            AccountCode("3..1")
+        with pytest.raises(InvalidAccountCodeError):
+            AccountCode(".3.1")
+        with pytest.raises(InvalidAccountCodeError):
+            AccountCode("3.1.abc")
+
+
+class TestSupportedLanguage:
+    """Tests for SupportedLanguage value object / enum."""
+
+    def test_should_parse_valid_languages(self) -> None:
+        assert SupportedLanguage.from_string("pt-br") == SupportedLanguage.PT_BR
+        assert SupportedLanguage.from_string("PT-BR") == SupportedLanguage.PT_BR
+        assert SupportedLanguage.from_string("en-us") == SupportedLanguage.EN_US
+        assert SupportedLanguage.from_string("EN-US ") == SupportedLanguage.EN_US
+
+    def test_should_reject_unsupported_language(self) -> None:
+        with pytest.raises(ValueError, match="Unsupported language 'es-es'"):
+            SupportedLanguage.from_string("es-es")
+        with pytest.raises(ValueError, match="Unsupported language ''"):
+            SupportedLanguage.from_string("")
+
+    def test_enum_members_and_values(self) -> None:
+        assert SupportedLanguage.PT_BR.value == "pt-br"
+        assert SupportedLanguage.EN_US.value == "en-us"
+        assert str(SupportedLanguage.PT_BR) == "pt-br"
+        assert SupportedLanguage("pt-br") == SupportedLanguage.PT_BR

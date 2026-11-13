@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from src.indicators.domain.models import CostCenterIndicator
 from src.indicators.domain.services.simulator import CostCenterImpact
 from src.intelligence.domain.models import AllocationAnomaly
-from src.shared.domain.value_objects import Period
+from src.shared.domain.value_objects import Period, SupportedLanguage
 
 
 class ExecutiveSummaryResponse(BaseModel):
@@ -62,6 +62,7 @@ class AIPort(Protocol):
         indicators: list[CostCenterIndicator],
         anomalies: list[AllocationAnomaly],
         period: Period,
+        language: SupportedLanguage = SupportedLanguage.PT_BR,
     ) -> ExecutiveSummaryResponse:
         """Synthesize period metrics and anomalies into an executive summary.
 
@@ -69,6 +70,7 @@ class AIPort(Protocol):
             indicators: Calculated performance indicators.
             anomalies: Detected allocation anomalies.
             period: The target fiscal period.
+            language: Requested language for the summary (default: pt-br).
 
         Returns:
             ExecutiveSummaryResponse: Validated executive report.

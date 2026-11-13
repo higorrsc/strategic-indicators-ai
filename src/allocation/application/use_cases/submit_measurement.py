@@ -10,8 +10,12 @@ from src.allocation.application.dto import (
 from src.allocation.domain.entities.contract import AllocationShare
 from src.allocation.domain.entities.measurement import Measurement
 from src.allocation.domain.exceptions import (
+    AccountingAccountNotFoundError,
     AllocationDomainError,
     ContractNotFoundError,
+)
+from src.allocation.domain.repositories.accounting_account_repository import (
+    AccountingAccountRepository,
 )
 from src.allocation.domain.repositories.contract_repository import (
     ContractRepository,
@@ -30,15 +34,18 @@ class SubmitMeasurementUseCase:
         self,
         measurement_repository: MeasurementRepository,
         contract_repository: ContractRepository,
+        accounting_account_repository: AccountingAccountRepository | None = None,
     ) -> None:
-        """Initialize use case with measurement and contract repositories.
+        """Initialize use case with repositories.
 
         Args:
             measurement_repository: Repository for measurement persistence.
             contract_repository: Repository for contract lookups.
+            accounting_account_repository: Optional repository for accounting accounts.
         """
         self._measurement_repository = measurement_repository
         self._contract_repository = contract_repository
+        self._accounting_account_repository = accounting_account_repository
 
     async def execute(self, command: SubmitMeasurementCommand) -> MeasurementDTO:
         """Create and submit a measurement with calculated exact allocation lines.
@@ -61,6 +68,7 @@ class SubmitMeasurementUseCase:
                 AllocationShare(
                     cost_center_id=s.cost_center_id,
                     percentage=Percentage.from_number(s.percentage),
+                    accounting_account_id=s.accounting_account_id,
                 )
                 for s in command.custom_allocations
             ]
@@ -70,6 +78,22 @@ class SubmitMeasurementUseCase:
             raise AllocationDomainError(
                 "No allocation rules provided and contract has no default allocation."
             )
+
+        if self._accounting_account_repository is not None:
+            for s in shares:
+                if s.accounting_account_id is not None:
+                    acc = await self._accounting_account_repository.get_by_id(
+                        s.accounting_account_id
+                    )
+                    if acc is None:
+                        raise AccountingAccountNotFoundError(
+                            f"Accounting account ID {s.accounting_account_id} "
+                            "not found."
+                        )
+                    if not acc.is_active:
+                        raise AllocationDomainError(
+                            f"Accounting account '{acc.code}' is inactive."
+                        )
 
         period = Period.from_string(command.period)
         gross_amount = Money(
@@ -105,6 +129,7 @@ class SubmitMeasurementUseCase:
                     amount=e.amount.amount,
                     percentage=e.percentage.value,
                     currency=e.amount.currency,
+                    accounting_account_id=e.accounting_account_id,
                 )
                 for e in measurement.entries
             ],

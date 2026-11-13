@@ -19,6 +19,7 @@ class AllocationShare:
 
     cost_center_id: UUID
     percentage: Percentage
+    accounting_account_id: UUID | None = None
 
 
 @dataclass(slots=True)

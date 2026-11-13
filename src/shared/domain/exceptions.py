@@ -32,3 +32,7 @@ class InvalidPeriodError(DomainError):
 
 class InvalidCostCenterCodeError(DomainError):
     """Raised when a cost center code does not match required structure."""
+
+
+class InvalidAccountCodeError(DomainError):
+    """Raised when an accounting account code does not match required structure."""

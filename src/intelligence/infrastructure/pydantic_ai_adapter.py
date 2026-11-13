@@ -26,7 +26,7 @@ from src.intelligence.domain.exceptions import AIProviderError
 from src.intelligence.domain.models import AllocationAnomaly
 from src.intelligence.infrastructure.fake_ai_adapter import FakeAIPort
 from src.shared.config.settings import Settings, get_settings
-from src.shared.domain.value_objects import Period
+from src.shared.domain.value_objects import Period, SupportedLanguage
 
 
 class PydanticAIAdapter(AIPort):
@@ -122,6 +122,7 @@ class PydanticAIAdapter(AIPort):
         indicators: list[CostCenterIndicator],
         anomalies: list[AllocationAnomaly],
         period: Period,
+        language: SupportedLanguage = SupportedLanguage.PT_BR,
     ) -> ExecutiveSummaryResponse:
         """Synthesize period metrics and anomalies into an executive summary.
 
@@ -129,6 +130,7 @@ class PydanticAIAdapter(AIPort):
             indicators: Calculated performance indicators.
             anomalies: Detected allocation anomalies.
             period: The target fiscal period.
+            language: Requested language locale (default: pt-br).
 
         Returns:
             ExecutiveSummaryResponse: Validated executive report.
@@ -138,14 +140,27 @@ class PydanticAIAdapter(AIPort):
         """
         if self._fake_port:
             return await self._fake_port.generate_executive_summary(
-                indicators, anomalies, period
+                indicators, anomalies, period, language=language
             )
 
         if not self._summary_agent:
             msg = "Summary agent is not initialized."
             raise AIProviderError(msg)
 
+        lang_instruction = (
+            "LANGUAGE REQUIREMENT: Generate all output fields "
+            "(executive_summary, financial_health_status, root_causes, "
+            "strategic_recommendations) strictly in Brazilian Portuguese (pt-br)."
+            if language == SupportedLanguage.PT_BR
+            else (
+                "LANGUAGE REQUIREMENT: Generate all output fields "
+                "(executive_summary, financial_health_status, root_causes, "
+                "strategic_recommendations) strictly in American English (en-us)."
+            )
+        )
+
         prompt = (
+            f"{lang_instruction}\n\n"
             f"Period: {period}\n\n"
             f"Indicators Summary:\n"
             + "\n".join(

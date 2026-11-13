@@ -2,11 +2,14 @@
 
 This script seeds:
 1. Hierarchical cost centers (Board -> IT [Cloud, Software], Operations, Marketing).
-2. Historical and current budget targets across multiple fiscal periods.
-3. Vendor contracts with default allocation shares (rateios).
-4. Historical measurements establishing baseline allocation patterns.
-5. Target period measurements with intentional budget overruns and shift anomalies.
-6. Execution of the AI Executive Summary Use Case to verify agent analysis.
+2. Hierarchical chart of accounts (Accounting Accounts).
+3. Historical and current budget targets across multiple fiscal periods.
+4. Vendor contracts with default allocation shares and accounting account mappings.
+5. Historical measurements establishing baseline allocation patterns and
+   account breakdown.
+6. Target period measurements with intentional budget overruns and shift anomalies.
+7. Verification of cost center accounting account breakdown.
+8. Execution of the AI Executive Summary Use Case to verify agent analysis.
 """
 
 from __future__ import annotations
@@ -16,6 +19,10 @@ import asyncio
 from decimal import Decimal
 from uuid import UUID, uuid4
 
+from src.allocation.application.use_cases.get_cost_center_accounting_breakdown import (
+    GetCostCenterAccountingBreakdownUseCase,
+)
+from src.allocation.domain.entities.accounting_account import AccountingAccount
 from src.allocation.domain.entities.contract import AllocationShare, Contract
 from src.allocation.domain.entities.measurement import Measurement
 from src.allocation.domain.entities.supplier import Supplier
@@ -35,10 +42,12 @@ from src.intelligence.application.use_cases.generate_executive_summary import (
 from src.presentation.dependencies import DependencyContainer
 from src.shared.config.settings import get_settings
 from src.shared.domain.value_objects import (
+    AccountCode,
     CostCenterCode,
     Money,
     Percentage,
     Period,
+    SupportedLanguage,
 )
 from src.shared.infrastructure.database.base import Base
 
@@ -48,6 +57,7 @@ async def seed_data(
     clean: bool = False,
     run_ai: bool = True,
     target_period_str: str = "2026-03",
+    language_str: str = "pt-br",
 ) -> ExecutiveSummaryDTO | None:
     """Populate enterprise financial data and optionally invoke the AI agent.
 
@@ -56,11 +66,13 @@ async def seed_data(
         clean: Whether to reset database tables before seeding.
         run_ai: Whether to run the AI Executive Summary use case after seeding.
         target_period_str: Target period for the financial anomaly analysis.
+        language_str: Requested language locale ('pt-br' or 'en-us').
 
     Returns:
         ExecutiveSummaryDTO | None: Generated executive summary if run_ai is True.
     """
     target_period = Period.from_string(target_period_str)
+    language = SupportedLanguage.from_string(language_str)
     period_jan = Period.from_string("2026-01")
     period_feb = Period.from_string("2026-02")
 
@@ -98,7 +110,43 @@ async def seed_data(
     )
     print("  - Created/Verified Cost Centers: 1.0, 1.1, 1.1.1, 1.1.2, 1.2, 1.3")
 
-    print("\n💰 Step 2: Seeding Budget Targets...")
+    print("\n📚 Step 2: Seeding Chart of Accounts (Accounting Accounts)...")
+    acc_cloud = await _get_or_create_accounting_account(
+        container,
+        code_str="3.1.01",
+        name="Infraestrutura Cloud & Hosting",
+        description="Serviços de computação, armazenamento e instâncias em nuvem",
+    )
+    acc_software = await _get_or_create_accounting_account(
+        container,
+        code_str="3.1.02",
+        name="Licenciamento de Software & Ferramentas SaaS",
+        description="Licenças de software para engenharia, ferramentas CI/CD e SaaS",
+    )
+    acc_consulting = await _get_or_create_accounting_account(
+        container,
+        code_str="3.1.03",
+        name="Consultoria Técnica & Serviços Especializados",
+        description="Serviços profissionais e consultoria especializada de TI",
+    )
+    acc_logistics = await _get_or_create_accounting_account(
+        container,
+        code_str="3.2.01",
+        name="Serviços de Logística e Fretes",
+        description="Distribuição regional, frota dedicada e fretes operacionais",
+    )
+    acc_marketing = await _get_or_create_accounting_account(
+        container,
+        code_str="3.3.01",
+        name="Publicidade, Campanhas e Mídia",
+        description="Veiculação de mídia digital e publicidade de crescimento",
+    )
+    print(
+        "  - Created/Verified Accounting Accounts: "
+        "3.1.01, 3.1.02, 3.1.03, 3.2.01, 3.3.01"
+    )
+
+    print("\n💰 Step 3: Seeding Budget Targets...")
     budget_specs = [
         # Cloud: $100,000 / month
         (cc_cloud.id, period_jan, "100000.00"),
@@ -130,7 +178,7 @@ async def seed_data(
             await container.budget_repo.add(target)
     print(f"  - Configured budget targets across {len(budget_specs)} slots.")
 
-    print("\n🤝 Step 3: Seeding Suppliers & Vendor Contracts...")
+    print("\n🤝 Step 4: Seeding Suppliers & Vendor Contracts...")
     # Supplier 1: AWS
     sp_aws = await _get_or_create_supplier(
         container, "Amazon Web Services Inc.", "12.345.678/0001-90"
@@ -143,6 +191,10 @@ async def seed_data(
     sp_mkt = await _get_or_create_supplier(
         container, "Acme Creative Studio", "44.555.666/0001-22"
     )
+    # Supplier 4: TechConsult Architecture Partners
+    sp_consult = await _get_or_create_supplier(
+        container, "TechConsult Architecture Partners", "55.666.777/0001-33"
+    )
 
     # Contracts
     ct_aws = await _get_or_create_contract(
@@ -154,10 +206,12 @@ async def seed_data(
             AllocationShare(
                 cost_center_id=cc_cloud.id,
                 percentage=Percentage.from_number(60.0),
+                accounting_account_id=acc_cloud.id,
             ),
             AllocationShare(
                 cost_center_id=cc_software.id,
                 percentage=Percentage.from_number(40.0),
+                accounting_account_id=acc_software.id,
             ),
         ],
     )
@@ -171,6 +225,7 @@ async def seed_data(
             AllocationShare(
                 cost_center_id=cc_ops.id,
                 percentage=Percentage.from_number(100.0),
+                accounting_account_id=acc_logistics.id,
             ),
         ],
     )
@@ -184,12 +239,30 @@ async def seed_data(
             AllocationShare(
                 cost_center_id=cc_mkt.id,
                 percentage=Percentage.from_number(100.0),
+                accounting_account_id=acc_marketing.id,
             ),
         ],
     )
-    print("  - Registered Contracts: CT-AWS-2026, CT-LOG-2026, CT-MKT-2026")
 
-    print("\n📊 Step 4: Seeding Historical & Current Period Measurements...")
+    ct_consult = await _get_or_create_contract(
+        container=container,
+        code="CT-CONSULT-2026",
+        supplier_id=sp_consult.id,
+        title="Specialized Software Architecture & DevOps Consulting",
+        default_allocations=[
+            AllocationShare(
+                cost_center_id=cc_software.id,
+                percentage=Percentage.from_number(100.0),
+                accounting_account_id=acc_consulting.id,
+            ),
+        ],
+    )
+    print(
+        "  - Registered Contracts: "
+        "CT-AWS-2026, CT-LOG-2026, CT-MKT-2026, CT-CONSULT-2026"
+    )
+
+    print("\n📊 Step 5: Seeding Historical & Current Period Measurements...")
     # Baseline 2026-01
     await _create_and_approve_measurement(
         container=container,
@@ -197,6 +270,13 @@ async def seed_data(
         period=period_jan,
         gross_amount=Money(Decimal("85000.00")),
         description="January Cloud Infrastructure Invoice",
+    )
+    await _create_and_approve_measurement(
+        container=container,
+        contract=ct_consult,
+        period=period_jan,
+        gross_amount=Money(Decimal("15000.00")),
+        description="January Software Architecture Advisory",
     )
     await _create_and_approve_measurement(
         container=container,
@@ -223,6 +303,13 @@ async def seed_data(
     )
     await _create_and_approve_measurement(
         container=container,
+        contract=ct_consult,
+        period=period_feb,
+        gross_amount=Money(Decimal("15000.00")),
+        description="February Cloud Migration Consulting",
+    )
+    await _create_and_approve_measurement(
+        container=container,
         contract=ct_log,
         period=period_feb,
         gross_amount=Money(Decimal("74000.00")),
@@ -246,10 +333,12 @@ async def seed_data(
         AllocationShare(
             cost_center_id=cc_cloud.id,
             percentage=Percentage.from_number(90.0),
+            accounting_account_id=acc_cloud.id,
         ),
         AllocationShare(
             cost_center_id=cc_software.id,
             percentage=Percentage.from_number(10.0),
+            accounting_account_id=acc_software.id,
         ),
     ]
     await _create_and_approve_measurement(
@@ -282,9 +371,32 @@ async def seed_data(
     )
     print("  - Successfully seeded measurements across 2026-01, 2026-02, and 2026-03.")
 
+    print("\n📑 Step 6: Verifying Cost Center Accounting Breakdown...")
+    breakdown_uc = GetCostCenterAccountingBreakdownUseCase(
+        measurement_repository=container.measurement_repo,
+        accounting_account_repository=container.accounting_account_repo,
+    )
+    breakdown_jan_software = await breakdown_uc.execute(cc_software.id, "2026-01")
+    print(f"  - Cost Center 1.1.2 ({cc_software.name}) Period 2026-01 Breakdown:")
+    for acc in breakdown_jan_software.accounts:
+        print(
+            f"    • [{acc.account_code}] {acc.account_name}: "
+            f"${acc.spent_amount} ({acc.share_pct}%)"
+        )
+
+    breakdown_mar_cloud = await breakdown_uc.execute(cc_cloud.id, target_period_str)
+    print(
+        f"  - Cost Center 1.1.1 ({cc_cloud.name}) Period {target_period_str} Breakdown:"
+    )
+    for acc in breakdown_mar_cloud.accounts:
+        print(
+            f"    • [{acc.account_code}] {acc.account_name}: "
+            f"${acc.spent_amount} ({acc.share_pct}%)"
+        )
+
     summary_result: ExecutiveSummaryDTO | None = None
     if run_ai:
-        print(f"\n🧠 Step 5: Executing AI Executive Summary for {target_period}...")
+        print(f"\n🧠 Step 7: Executing AI Executive Summary for {target_period}...")
         indicators_uc = ComputePeriodIndicatorsUseCase(
             cost_center_repository=container.cost_center_repo,
             budget_repository=container.budget_repo,
@@ -300,7 +412,7 @@ async def seed_data(
             ai_port=container.ai_port,
             settings=container.settings,
         )
-        summary_result = await summary_uc.execute(target_period)
+        summary_result = await summary_uc.execute(target_period, language=language)
         _print_executive_briefing(summary_result)
 
     return summary_result
@@ -319,6 +431,26 @@ async def _get_or_create_cost_center(
     cc = CostCenter(id=uuid4(), code=code, name=name, parent_id=parent_id)
     await container.cost_center_repo.add(cc)
     return cc
+
+
+async def _get_or_create_accounting_account(
+    container: DependencyContainer,
+    code_str: str,
+    name: str,
+    description: str = "",
+) -> AccountingAccount:
+    code = AccountCode(code_str)
+    existing = await container.accounting_account_repo.get_by_code(code)
+    if existing:
+        return existing
+    account = AccountingAccount(
+        id=uuid4(),
+        code=code,
+        name=name,
+        description=description,
+    )
+    await container.accounting_account_repo.save(account)
+    return account
 
 
 async def _get_or_create_supplier(
@@ -470,6 +602,13 @@ async def main() -> None:
         help="Fiscal period for anomaly evaluation (default: '2026-03').",
     )
     parser.add_argument(
+        "--lang",
+        type=str,
+        default="pt-br",
+        choices=["pt-br", "en-us"],
+        help="Language locale for AI summary (default: 'pt-br').",
+    )
+    parser.add_argument(
         "--echo",
         action="store_true",
         help="Enable SQL logging.",
@@ -489,6 +628,7 @@ async def main() -> None:
             clean=args.clean,
             run_ai=not args.no_ai,
             target_period_str=args.period,
+            language_str=args.lang,
         )
     finally:
         await container.close_database()

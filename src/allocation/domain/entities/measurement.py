@@ -30,6 +30,7 @@ class AllocationEntry:
     cost_center_id: UUID
     amount: Money
     percentage: Percentage
+    accounting_account_id: UUID | None = None
     id: UUID = field(default_factory=uuid4)
 
 
