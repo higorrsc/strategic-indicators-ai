@@ -81,8 +81,6 @@ async def get_period_indicators(
     )
 
 
-
-
 @router.get(
     "/indicators/{period}/materiality-focus",
     response_model=MaterialImpactReportResponse,
