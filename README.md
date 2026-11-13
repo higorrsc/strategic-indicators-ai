@@ -451,6 +451,9 @@ Access the application:
 | **Contracts** | `POST` | `/api/v1/contracts` | Register vendor contract with default allocations |
 | **Contracts** | `GET` | `/api/v1/contracts` | List contracts with optional `supplier_id` & `active_only` (paginated) |
 | **Contracts** | `GET` | `/api/v1/contracts/{id}` | Retrieve contract information |
+| **Accounting Accounts** | `POST` | `/api/v1/accounting-accounts` | Register an accounting account in chart of accounts |
+| **Accounting Accounts** | `GET` | `/api/v1/accounting-accounts` | List accounting accounts with optional `active_only` (paginated) |
+| **Accounting Accounts** | `GET` | `/api/v1/cost-centers/{id}/accounting-breakdown` | Retrieve cost center spend broken down by accounting account |
 | **Measurements** | `POST` | `/api/v1/measurements` | Submit measurement with exact penny split |
 | **Measurements** | `GET` | `/api/v1/measurements` | List measurements with optional `period`, `contract_id` & `state` (paginated) |
 | **Measurements** | `GET` | `/api/v1/measurements/{id}` | Retrieve measurement details |
@@ -463,7 +466,7 @@ Access the application:
 
 ### Standardized Pagination Envelope
 
-All collection listing endpoints (`GET /api/v1/contracts`, `GET /api/v1/measurements`, `GET /api/v1/cost-centers`) return a standardized envelope with metadata and HATEOAS navigation links:
+All collection listing endpoints (`GET /api/v1/contracts`, `GET /api/v1/measurements`, `GET /api/v1/cost-centers`, `GET /api/v1/accounting-accounts`) return a standardized envelope with metadata and HATEOAS navigation links:
 
 - **Query Parameters**:
   - `page`: Current page number (integer $\ge 1$, default `1`).
