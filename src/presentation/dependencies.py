@@ -76,6 +76,9 @@ from src.budgeting.infrastructure.repositories import (
 from src.indicators.application.use_cases.compute_period_indicators import (
     ComputePeriodIndicatorsUseCase,
 )
+from src.indicators.application.use_cases.material_impact import (
+    GenerateMaterialImpactReportUseCase,
+)
 from src.indicators.application.use_cases.simulate_scenario import (
     SimulateScenarioUseCase,
 )
@@ -578,6 +581,36 @@ def get_simulate_scenario_use_case(
     )
 
 
+def get_material_impact_use_case(
+    cc_repo: Annotated[CostCenterRepository, Depends(get_cost_center_repository)],
+    budget_repo: Annotated[BudgetRepository, Depends(get_budget_repository)],
+    measurement_repo: Annotated[
+        MeasurementRepository, Depends(get_measurement_repository)
+    ],
+    accounting_account_repo: Annotated[
+        AccountingAccountRepository, Depends(get_accounting_account_repository)
+    ],
+) -> GenerateMaterialImpactReportUseCase:
+    """Provide GenerateMaterialImpactReportUseCase.
+
+    Args:
+        cc_repo: Cost center repository.
+        budget_repo: Budget repository.
+        measurement_repo: Measurement repository.
+        accounting_account_repo: Accounting account repository.
+
+    Returns:
+        GenerateMaterialImpactReportUseCase: Instantiated use case.
+    """
+    return GenerateMaterialImpactReportUseCase(
+        cost_center_repository=cc_repo,
+        budget_repository=budget_repo,
+        measurement_repository=measurement_repo,
+        accounting_account_repository=accounting_account_repo,
+    )
+
+
+
 def get_analyze_anomalies_use_case(
     measurement_repo: Annotated[
         MeasurementRepository, Depends(get_measurement_repository)
@@ -695,3 +728,8 @@ GetCostCenterAccountingBreakdownUseCaseDep = Annotated[
     GetCostCenterAccountingBreakdownUseCase,
     Depends(get_cost_center_accounting_breakdown_use_case),
 ]
+MaterialImpactUseCaseDep = Annotated[
+    GenerateMaterialImpactReportUseCase,
+    Depends(get_material_impact_use_case),
+]
+
