@@ -10,7 +10,7 @@ from src.intelligence.application.ports.ai_port import (
     ScenarioEvaluationResponse,
 )
 from src.intelligence.domain.models import AllocationAnomaly
-from src.shared.domain.value_objects import Period
+from src.shared.domain.value_objects import Period, SupportedLanguage
 
 
 class FakeAIPort(AIPort):
@@ -35,6 +35,7 @@ class FakeAIPort(AIPort):
         indicators: list[CostCenterIndicator],
         anomalies: list[AllocationAnomaly],
         period: Period,
+        language: SupportedLanguage = SupportedLanguage.PT_BR,
     ) -> ExecutiveSummaryResponse:
         """Generate deterministic executive summary from indicators and anomalies.
 
@@ -42,6 +43,7 @@ class FakeAIPort(AIPort):
             indicators: Cost center indicators.
             anomalies: Detected anomalies.
             period: Target period.
+            language: Requested language locale (default: pt-br).
 
         Returns:
             ExecutiveSummaryResponse: Synthesized executive report.
@@ -55,44 +57,91 @@ class FakeAIPort(AIPort):
             if ind.status == IndicatorStatus.CRITICAL_OVERRUN
         ]
 
-        if overrun_centers:
-            health = "CRITICAL"
-            summary = (
-                f"Fiscal period {period} experienced critical budgetary overruns "
-                f"concentrated in cost center(s): {', '.join(overrun_centers)}."
-            )
-        elif anomalies:
-            health = "CONCERNING"
-            summary = (
-                f"Fiscal period {period} is within global targets but has "
-                f"{len(anomalies)} suspicious allocation anomalies requiring audit."
+        if language == SupportedLanguage.PT_BR:
+            if overrun_centers:
+                health = "CRITICAL"
+                summary = (
+                    f"O período fiscal {period} apresentou estouros orçamentários "
+                    f"críticos concentrados no(s) centro(s) de custo: "
+                    f"{', '.join(overrun_centers)}."
+                )
+            elif anomalies:
+                health = "CONCERNING"
+                summary = (
+                    f"O período fiscal {period} está dentro das metas globais, mas "
+                    f"possui {len(anomalies)} anomalias de alocação que exigem "
+                    f"auditoria."
+                )
+            else:
+                health = "HEALTHY"
+                summary = (
+                    f"O período fiscal {period} encerrou com execução orçamentária "
+                    f"equilibrada em todos os departamentos monitorados."
+                )
+
+            root_causes = [
+                f"Centro de custo {code} excedeu os limites orçamentários."
+                for code in overrun_centers
+            ]
+            for a in anomalies:
+                root_causes.append(f"{a.anomaly_type.value}: {a.description}")
+
+            if not root_causes:
+                root_causes.append(
+                    "Todas as despesas departamentais cumpriram as metas planejadas."
+                )
+
+            recommendations = (
+                [
+                    "Iniciar revisão imediata do consumo de contratos de fornecedores.",
+                    "Aplicar congelamento de alocação em centros de custo estourados.",
+                ]
+                if overrun_centers
+                else [
+                    "Manter as diretrizes operacionais de alocação orçamentária "
+                    "vigentes."
+                ]
             )
         else:
-            health = "HEALTHY"
-            summary = (
-                f"Fiscal period {period} closed with balanced budget execution "
-                f"across all monitored departments."
-            )
+            if overrun_centers:
+                health = "CRITICAL"
+                summary = (
+                    f"Fiscal period {period} experienced critical budgetary overruns "
+                    f"concentrated in cost center(s): {', '.join(overrun_centers)}."
+                )
+            elif anomalies:
+                health = "CONCERNING"
+                summary = (
+                    f"Fiscal period {period} is within global targets but has "
+                    f"{len(anomalies)} suspicious allocation anomalies requiring audit."
+                )
+            else:
+                health = "HEALTHY"
+                summary = (
+                    f"Fiscal period {period} closed with balanced budget execution "
+                    f"across all monitored departments."
+                )
 
-        root_causes = [
-            f"Cost center {code} exceeded budget limits." for code in overrun_centers
-        ]
-        for a in anomalies:
-            root_causes.append(f"{a.anomaly_type}: {a.description}")
-
-        if not root_causes:
-            root_causes.append(
-                "All departmental expenditure conformed to planned targets."
-            )
-
-        recommendations = (
-            [
-                "Initiate immediate review of vendor contract consumption.",
-                "Enforce allocation freeze on over-budget units.",
+            root_causes = [
+                f"Cost center {code} exceeded budget limits."
+                for code in overrun_centers
             ]
-            if overrun_centers
-            else ["Maintain current operational budget allocation guidelines."]
-        )
+            for a in anomalies:
+                root_causes.append(f"{a.anomaly_type.value}: {a.description}")
+
+            if not root_causes:
+                root_causes.append(
+                    "All departmental expenditure conformed to planned targets."
+                )
+
+            recommendations = (
+                [
+                    "Initiate immediate review of vendor contract consumption.",
+                    "Enforce allocation freeze on over-budget units.",
+                ]
+                if overrun_centers
+                else ["Maintain current operational budget allocation guidelines."]
+            )
 
         return ExecutiveSummaryResponse(
             executive_summary=summary,
