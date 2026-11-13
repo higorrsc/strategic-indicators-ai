@@ -54,14 +54,12 @@ from src.allocation.infrastructure.repositories import (
     SqlAlchemyMeasurementRepository,
     SqlAlchemySupplierRepository,
 )
-from src.budgeting.application.use_cases.create_cost_center import (
+from src.budgeting.application.use_cases.commands import (
     CreateCostCenterUseCase,
-)
-from src.budgeting.application.use_cases.get_hierarchy_budget import (
-    GetHierarchyBudgetUseCase,
-)
-from src.budgeting.application.use_cases.set_budget_target import (
     SetBudgetTargetUseCase,
+)
+from src.budgeting.application.use_cases.queries import (
+    GetHierarchyBudgetUseCase,
 )
 from src.budgeting.domain.repositories.budget_repository import BudgetRepository
 from src.budgeting.domain.repositories.cost_center_repository import (
@@ -73,13 +71,9 @@ from src.budgeting.infrastructure.repositories import (
     SqlAlchemyBudgetRepository,
     SqlAlchemyCostCenterRepository,
 )
-from src.indicators.application.use_cases.compute_period_indicators import (
+from src.indicators.application.use_cases.queries import (
     ComputePeriodIndicatorsUseCase,
-)
-from src.indicators.application.use_cases.material_impact import (
     GenerateMaterialImpactReportUseCase,
-)
-from src.indicators.application.use_cases.simulate_scenario import (
     SimulateScenarioUseCase,
 )
 from src.intelligence.application.ports.ai_analysis_cache_repository import (

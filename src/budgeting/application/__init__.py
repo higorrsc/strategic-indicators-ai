@@ -1,1 +1,1 @@
-"""Budgeting application layer package."""
+"""Budgeting application layer."""

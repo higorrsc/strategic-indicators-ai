@@ -7,7 +7,9 @@ from uuid import UUID
 from src.allocation.domain.exceptions import MeasurementNotFoundError
 from src.allocation.domain.repositories import MeasurementRepository
 from src.indicators.application.dto import ComputePeriodIndicatorsQuery
-from src.indicators.application.use_cases import ComputePeriodIndicatorsUseCase
+from src.indicators.application.use_cases.queries import (
+    ComputePeriodIndicatorsUseCase,
+)
 from src.indicators.domain.models import CostCenterIndicator, IndicatorStatus
 from src.intelligence.domain.models import AllocationAnomaly
 from src.intelligence.domain.services.anomaly_detector import AllocationAnomalyDetector

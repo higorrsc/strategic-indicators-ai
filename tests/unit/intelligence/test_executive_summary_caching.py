@@ -24,7 +24,9 @@ from src.budgeting.infrastructure.repositories.in_memory_budgeting_repository im
     InMemoryBudgetRepository,
     InMemoryCostCenterRepository,
 )
-from src.indicators.application.use_cases import ComputePeriodIndicatorsUseCase
+from src.indicators.application.use_cases.queries import (
+    ComputePeriodIndicatorsUseCase,
+)
 from src.intelligence.application.use_cases import (
     AnalyzeAllocationAnomaliesUseCase,
     GenerateExecutiveSummaryUseCase,

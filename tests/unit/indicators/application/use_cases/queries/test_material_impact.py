@@ -23,7 +23,7 @@ from src.budgeting.infrastructure.repositories.in_memory_budgeting_repository im
     InMemoryCostCenterRepository,
 )
 from src.indicators.application.dto import GenerateMaterialImpactQuery
-from src.indicators.application.use_cases.material_impact import (
+from src.indicators.application.use_cases.queries.material_impact import (
     GenerateMaterialImpactReportUseCase,
 )
 from src.shared.domain.value_objects import (

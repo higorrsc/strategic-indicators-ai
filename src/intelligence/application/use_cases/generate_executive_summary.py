@@ -7,7 +7,9 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from src.indicators.application.dto import ComputePeriodIndicatorsQuery
-from src.indicators.application.use_cases import ComputePeriodIndicatorsUseCase
+from src.indicators.application.use_cases.queries import (
+    ComputePeriodIndicatorsUseCase,
+)
 from src.indicators.domain.models import CostCenterIndicator, IndicatorStatus
 from src.intelligence.application.dto import AnomalyDTO, ExecutiveSummaryDTO
 from src.intelligence.application.ports.ai_analysis_cache_repository import (

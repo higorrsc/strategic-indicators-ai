@@ -29,7 +29,7 @@ from src.allocation.domain.entities.supplier import Supplier
 from src.allocation.domain.services.allocator import ExactPennyAllocator
 from src.budgeting.domain.entities.budget_target import BudgetTarget
 from src.budgeting.domain.entities.cost_center import CostCenter
-from src.indicators.application.use_cases.compute_period_indicators import (
+from src.indicators.application.use_cases.queries.compute_period_indicators import (
     ComputePeriodIndicatorsUseCase,
 )
 from src.intelligence.application.dto import ExecutiveSummaryDTO
