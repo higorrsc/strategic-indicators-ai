@@ -6,6 +6,7 @@ from .contracts_router import router as contracts_router
 from .indicators_router import router as indicators_router
 from .intelligence_router import router as intelligence_router
 from .measurements_router import router as measurements_router
+from .scenarios_router import router as scenarios_router
 
 __all__ = [
     "accounting_router",
@@ -14,4 +15,5 @@ __all__ = [
     "indicators_router",
     "intelligence_router",
     "measurements_router",
+    "scenarios_router",
 ]

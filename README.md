@@ -272,10 +272,11 @@ The persistence architecture follows Clean Architecture boundaries:
 │   │   ├── domain/
 │   │   │   ├── models.py           # AllocationAnomaly
 │   │   │   ├── cache.py            # AIAnalysisCache, CacheStatus enum
+│   │   │   ├── repositories/       # AIAnalysisCacheRepository protocol
 │   │   │   ├── services/           # AllocationAnomalyDetector
 │   │   │   └── exceptions.py       # Intelligence domain exceptions
 │   │   ├── application/
-│   │   │   ├── ports/              # AIPort, AIAnalysisCacheRepository protocols
+│   │   │   ├── ports/              # AIPort protocol
 │   │   │   ├── services/           # DataFingerprintService (SHA-256 drift detection)
 │   │   │   ├── dto.py              # Intelligence DTOs
 │   │   │   └── use_cases/          # AnalyzeAllocationAnomalies, GenerateExecutiveSummary

@@ -14,6 +14,7 @@ from src.presentation.api.v1 import (
     indicators_router,
     intelligence_router,
     measurements_router,
+    scenarios_router,
 )
 from src.presentation.dependencies import get_container
 from src.presentation.exception_handlers import register_exception_handlers
@@ -66,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(measurements_router)
     app.include_router(accounting_router)
     app.include_router(indicators_router)
+    app.include_router(scenarios_router)
     app.include_router(intelligence_router)
 
     return app

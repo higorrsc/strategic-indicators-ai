@@ -36,10 +36,8 @@ from src.budgeting.infrastructure.repositories import (
     SessionManagedBudgetRepository,
     SessionManagedCostCenterRepository,
 )
-from src.intelligence.application.ports.ai_analysis_cache_repository import (
-    AIAnalysisCacheRepository,
-)
 from src.intelligence.application.ports.ai_port import AIPort
+from src.intelligence.domain.repositories import AIAnalysisCacheRepository
 from src.intelligence.infrastructure.pydantic_ai_adapter import PydanticAIAdapter
 from src.intelligence.infrastructure.repositories import (
     InMemoryAIAnalysisCacheRepository,
