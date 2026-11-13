@@ -29,6 +29,7 @@ class FakeAIPort(AIPort):
         """
         self._canned_summary = canned_summary
         self._canned_scenario = canned_scenario
+        self.call_count: int = 0
 
     async def generate_executive_summary(
         self,
@@ -48,6 +49,7 @@ class FakeAIPort(AIPort):
         Returns:
             ExecutiveSummaryResponse: Synthesized executive report.
         """
+        self.call_count += 1
         if self._canned_summary:
             return self._canned_summary
 

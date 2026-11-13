@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     AI_BASE_URL: str = "http://localhost:11434/v1"
     AI_API_KEY: str | None = None
     AI_TIMEOUT_SECONDS: float = 30.0
+    AI_CACHE_TTL_HOURS: int = 24
 
 
 @lru_cache(maxsize=1)

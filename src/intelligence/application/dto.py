@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from src.indicators.application.dto import PeriodIndicatorsDTO
 from src.indicators.domain.services.simulator import CostCenterImpact
+from src.intelligence.domain.cache import CacheStatus
 from src.intelligence.domain.models import (
     AllocationAnomaly,
     AnomalySeverity,
@@ -70,6 +72,9 @@ class ExecutiveSummaryDTO:
     is_fallback: bool = False
     ai_provider: str = "fake"
     language: SupportedLanguage = SupportedLanguage.PT_BR
+    cache_status: CacheStatus = CacheStatus.MISS
+    is_cached: bool = False
+    cached_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

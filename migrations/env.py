@@ -11,7 +11,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 import src.allocation.infrastructure.database.models
-import src.budgeting.infrastructure.database.models  # noqa: F401
+import src.budgeting.infrastructure.database.models
+import src.intelligence.infrastructure.database.models  # noqa: F401
 from src.shared.config.settings import get_settings
 from src.shared.infrastructure.database.base import Base
 
