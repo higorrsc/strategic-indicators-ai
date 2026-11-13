@@ -47,6 +47,7 @@ from src.shared.domain.value_objects import (
     Money,
     Percentage,
     Period,
+    SupportedLanguage,
 )
 from src.shared.infrastructure.database.base import Base
 
@@ -56,6 +57,7 @@ async def seed_data(
     clean: bool = False,
     run_ai: bool = True,
     target_period_str: str = "2026-03",
+    language_str: str = "pt-br",
 ) -> ExecutiveSummaryDTO | None:
     """Populate enterprise financial data and optionally invoke the AI agent.
 
@@ -64,11 +66,13 @@ async def seed_data(
         clean: Whether to reset database tables before seeding.
         run_ai: Whether to run the AI Executive Summary use case after seeding.
         target_period_str: Target period for the financial anomaly analysis.
+        language_str: Requested language locale ('pt-br' or 'en-us').
 
     Returns:
         ExecutiveSummaryDTO | None: Generated executive summary if run_ai is True.
     """
     target_period = Period.from_string(target_period_str)
+    language = SupportedLanguage.from_string(language_str)
     period_jan = Period.from_string("2026-01")
     period_feb = Period.from_string("2026-02")
 
@@ -408,7 +412,7 @@ async def seed_data(
             ai_port=container.ai_port,
             settings=container.settings,
         )
-        summary_result = await summary_uc.execute(target_period)
+        summary_result = await summary_uc.execute(target_period, language=language)
         _print_executive_briefing(summary_result)
 
     return summary_result
@@ -598,6 +602,13 @@ async def main() -> None:
         help="Fiscal period for anomaly evaluation (default: '2026-03').",
     )
     parser.add_argument(
+        "--lang",
+        type=str,
+        default="pt-br",
+        choices=["pt-br", "en-us"],
+        help="Language locale for AI summary (default: 'pt-br').",
+    )
+    parser.add_argument(
         "--echo",
         action="store_true",
         help="Enable SQL logging.",
@@ -617,6 +628,7 @@ async def main() -> None:
             clean=args.clean,
             run_ai=not args.no_ai,
             target_period_str=args.period,
+            language_str=args.lang,
         )
     finally:
         await container.close_database()

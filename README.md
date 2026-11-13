@@ -461,8 +461,8 @@ Access the application:
 | **Indicators** | `GET` | `/api/v1/indicators/{period}` | Compute period variance and execution status |
 | **Scenarios** | `POST` | `/api/v1/scenarios/simulate` | In-memory What-If simulation (inflation & shifts) |
 | **Intelligence** | `GET` | `/api/v1/intelligence/anomalies/{id}` | Detect abrupt rateio shifts and budget dumping |
-| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary` | Generate AI executive analysis and action plan |
-| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary/pdf` | Download formatted binary PDF executive briefing |
+| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary` | Generate AI executive analysis and action plan (`lang=pt-br` or `en-us`) |
+| **Intelligence** | `GET` | `/api/v1/intelligence/executive-summary/pdf` | Download formatted binary PDF executive briefing (`lang=pt-br` or `en-us`) |
 
 ### Standardized Pagination Envelope
 
