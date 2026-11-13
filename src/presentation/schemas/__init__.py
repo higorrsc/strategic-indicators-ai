@@ -33,6 +33,10 @@ from src.presentation.schemas.intelligence import (
     AnomalyResponse,
     ExecutiveSummaryResponseSchema,
 )
+from src.presentation.schemas.materiality import (
+    MaterialImpactReportResponse,
+    MaterialityItemResponse,
+)
 
 __all__ = [
     "AccountingAccountCreateRequest",
@@ -53,6 +57,8 @@ __all__ = [
     "CostCenterResponse",
     "ExecutiveSummaryResponseSchema",
     "HierarchyBudgetResponse",
+    "MaterialImpactReportResponse",
+    "MaterialityItemResponse",
     "MeasurementResponse",
     "MeasurementSubmitRequest",
     "PeriodIndicatorsResponse",
