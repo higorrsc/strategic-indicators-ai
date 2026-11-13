@@ -4,9 +4,10 @@
 
 Calculates relative percentage materiality and cumulative Pareto distribution of expenditures and budget variances across Cost Centers, Hierarchical Branches, and Accounting Accounts to guide analyst focus toward high-impact areas.
 
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Relative Materiality and Effort Prioritization Analysis
+
 
 The system SHALL compute relative percentage contribution metrics for budget expenditures and variances, ranking entities by their cumulative impact across selectable segregation dimensions (`cost_center`, `hierarchy`, and `accounting_account`).
 

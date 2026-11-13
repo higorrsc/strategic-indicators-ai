@@ -4,9 +4,10 @@
 
 Enables requesting AI-generated executive summaries and downloadable PDF briefing documents in specific languages (`pt-br` and `en-us`).
 
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Multilingual AI Executive Analysis
+
 
 The system SHALL generate executive insights, root causes, and strategic recommendations in the user's requested language (`pt-br` or `en-us`).
 

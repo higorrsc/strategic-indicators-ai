@@ -4,9 +4,10 @@
 
 Enables granular expense classification by associating cost allocation entries with specific Accounting Accounts (Contas Contábeis) within Cost Centers.
 
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Accounting Account Registration and Management
+
 
 The system SHALL register and query accounting accounts defined by a standardized hierarchical code, friendly name, and active status.
 
