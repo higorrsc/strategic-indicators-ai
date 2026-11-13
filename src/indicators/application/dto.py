@@ -85,3 +85,48 @@ class SimulationResultDTO:
     baseline_indicators: list[CostCenterIndicatorDTO]
     simulated_indicators: list[CostCenterIndicatorDTO]
     impacts: list[CostCenterImpactDTO]
+
+
+@dataclass(frozen=True, slots=True)
+class MaterialityItemDTO:
+    """DTO representing an individual ranked materiality item."""
+
+    entity_id: UUID | None
+    code: str
+    name: str
+    level: str
+    planned_budget: Decimal | None
+    actual_spent: Decimal
+    variance: Decimal | None
+    metric_value: Decimal
+    share_of_total_pct: Decimal
+    cumulative_pct: Decimal
+    priority: str
+    rank: int
+
+
+@dataclass(frozen=True, slots=True)
+class MaterialImpactReportDTO:
+    """DTO representing the consolidated materiality and Pareto focus report."""
+
+    period: str
+    aggregation_level: str
+    focus_metric: str
+    cost_center_scope_id: UUID | None
+    total_baseline_budget: Decimal | None
+    total_baseline_spent: Decimal
+    total_baseline_overrun: Decimal
+    items: list[MaterialityItemDTO]
+    currency: str = "USD"
+
+
+@dataclass(frozen=True, slots=True)
+class GenerateMaterialImpactQuery:
+    """Query payload to generate a materiality and effort focus report."""
+
+    period: str
+    level: str = "cost_center"
+    metric: str = "variance"
+    cost_center_id: UUID | None = None
+    threshold_pct: Decimal | None = None
+

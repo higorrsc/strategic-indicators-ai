@@ -11,12 +11,13 @@
     - Accounting account aggregation calculations
 
 
-- [ ] 2. Application Use Cases & DTOs
-  - [ ] 2.1 Define `MaterialityItemDTO` and `MaterialImpactReportDTO` in `src/application/dto/indicators.py`
-  - [ ] 2.2 Implement `GenerateMaterialImpactReportUseCase` in `src/application/use_cases/indicators/material_impact.py`
-  - [ ] 2.3 Implement hierarchical rollup logic grouping children by root parent cost center
-  - [ ] 2.4 Implement accounting account aggregation logic (both global and scoped by `cost_center_id`)
-  - [ ] 2.5 Write application use case unit tests in `tests/unit/indicators/test_material_impact_use_case.py`
+- [x] 2. Application Use Cases & DTOs
+  - [x] 2.1 Define `MaterialityItemDTO` and `MaterialImpactReportDTO` in `src/application/dto/indicators.py`
+  - [x] 2.2 Implement `GenerateMaterialImpactReportUseCase` in `src/application/use_cases/indicators/material_impact.py`
+  - [x] 2.3 Implement hierarchical rollup logic grouping children by root parent cost center
+  - [x] 2.4 Implement accounting account aggregation logic (both global and scoped by `cost_center_id`)
+  - [x] 2.5 Write application use case unit tests in `tests/unit/indicators/test_material_impact_use_case.py`
+
 
 - [ ] 3. Presentation & API Layer
   - [ ] 3.1 Define Pydantic response models in `src/presentation/schemas/materiality.py`
