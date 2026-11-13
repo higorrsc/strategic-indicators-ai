@@ -1,11 +1,11 @@
 """Shared domain value objects package."""
 
-from src.shared.domain.value_objects.account_code import AccountCode
-from src.shared.domain.value_objects.cost_center_code import CostCenterCode
-from src.shared.domain.value_objects.language import SupportedLanguage
-from src.shared.domain.value_objects.money import Money
-from src.shared.domain.value_objects.percentage import Percentage
-from src.shared.domain.value_objects.period import Period
+from .account_code import AccountCode
+from .cost_center_code import CostCenterCode
+from .language import SupportedLanguage
+from .money import Money
+from .percentage import Percentage
+from .period import Period
 
 __all__ = [
     "AccountCode",

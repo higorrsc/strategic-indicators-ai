@@ -1,12 +1,11 @@
 """Cost allocation infrastructure repositories."""
 
-from src.allocation.infrastructure.repositories.in_memory_allocation_repository import (
+from .in_memory_allocation_repository import (
     InMemoryAccountingAccountRepository,
     InMemoryContractRepository,
     InMemoryMeasurementRepository,
     InMemorySupplierRepository,
 )
-
 from .sqlalchemy_allocation_repository import (
     SqlAlchemyAccountingAccountRepository,
     SqlAlchemyContractRepository,

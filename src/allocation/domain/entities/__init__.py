@@ -1,13 +1,9 @@
 """Cost allocation domain entities package."""
 
-from src.allocation.domain.entities.accounting_account import AccountingAccount
-from src.allocation.domain.entities.contract import AllocationShare, Contract
-from src.allocation.domain.entities.measurement import (
-    AllocationEntry,
-    Measurement,
-    MeasurementState,
-)
-from src.allocation.domain.entities.supplier import Supplier
+from .accounting_account import AccountingAccount
+from .contract import AllocationShare, Contract
+from .measurement import AllocationEntry, Measurement, MeasurementState
+from .supplier import Supplier
 
 __all__ = [
     "AccountingAccount",

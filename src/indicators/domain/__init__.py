@@ -1,13 +1,13 @@
 """Budget indicators domain layer package."""
 
-from src.indicators.domain.models import (
+from .models import (
     CostCenterIndicator,
     IndicatorStatus,
     MaterialityAnalysisResult,
     MaterialityCandidate,
     MaterialityItem,
 )
-from src.indicators.domain.types import (
+from .types import (
     ActionPriority,
     AggregationLevel,
     FocusMetric,

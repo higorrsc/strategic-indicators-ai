@@ -1,6 +1,6 @@
 """Database models for cost allocation context."""
 
-from src.allocation.infrastructure.database.models import (
+from .models import (
     AllocationEntryModel,
     ContractAllocationModel,
     ContractModel,
